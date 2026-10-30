@@ -32,4 +32,7 @@ interface RotinaDao {
 
     @Upsert
     suspend fun salvar(item: ChecklistDia)
+
+    @Query("SELECT * FROM checklist WHERE data = :data AND metaId = :metaId")
+    suspend fun obter(data: Long, metaId: Long): ChecklistDia?
 }
