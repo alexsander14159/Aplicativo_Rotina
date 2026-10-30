@@ -68,7 +68,7 @@ interface RotinaDao {
 - [x] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrar em docs/STATUS.md
 - [x] Passo 2: MainActivity com tela mínima em Material 3
 - [x] Passo 3: `gradlew assembleDebug` → OK
-- [ ] Passo 4: `adb install -r` → "Rotina" abre no celular (⏳ celular não conectado — verificação agrupada)
+- [x] Passo 4: `adb install -r` → "Rotina" abre no celular ✅ (TECNO KL4/Spark Go 1, abriu hoje 01:17)
 
 - [x] Passo 5: `git init` + commit `feat: esqueleto do projeto com tema Material 3` → `5139192`
 
@@ -76,7 +76,7 @@ interface RotinaDao {
 **Files:** Create `data/Meta.kt`, `data/ChecklistDia.kt`, `data/RotinaDao.kt`, `data/RotinaDb.kt` (seed das 6 metas via `RoomDatabase.Callback`).
 **Interfaces:** Consumes Restrições globais; Produces `RotinaDao` e `RotinaDb.get(context)` (assinaturas acima).
 - [x] Passo 1: entidades, DAO e banco + seed ordem 1..6
-- [ ] Passo 2: `assembleDebug` OK ✅ → instalar → primeiro run no celular mostra as 6 metas (Review Focus: seed) ⏳ agrupado
+- [x] Passo 2: `assembleDebug` OK ✅ → instalar → primeiro run no celular mostra as 6 metas (Review Focus: seed) ✅ seed confirmada na tela em 01:18
 - [x] Passo 3: commit `feat: room com metas e checklist diário` → `05f2d63`
 
 ### Tarefa 3: ViewModel + tela de checklist
@@ -84,16 +84,16 @@ interface RotinaDao {
 **Interfaces:** Consumes `RotinaDao`; Produces `RotinaViewModel` (`val metas: StateFlow<List<EstadoMeta>>`, `fun alternar(metaId: Long)`) e composable `TelaMetas(vm)`.
 - [x] Passo 1: teste JVM da lógica pura `proximoEstado(atual: Boolean?): Boolean` — null→true, false→true, true→false. Run: `gradlew testDebugUnitTest` (1 tarefa só). Esperado: PASS — **feito: RED (função inexistente) → GREEN, XML: tests="2" failures="0"**
 - [x] Passo 2: ViewModel + LazyColumn com checkbox e data de hoje no topo
-- [ ] Passo 3: no celular — marcar 2 metas, fechar app, reabrir → seguem marcadas; mudar a data do aparelho → lista nova vazia ⏳ agrupado
+- [x] Passo 3: no celular — marcar metas, fechar app, reabrir → seguem marcadas ✅ (force-stop + reabrir: 6/6 persistiram; ciclo marcar/desmarcar confirmado no banco via `run-as`+Python); ⏳ mudar a data do aparelho → lista nova vazia → teste manual na Tarefa 5
 - [x] Passo 4: commit `feat: checklist diário persistente` → `32aff6c`
 
 ### Tarefa 4: Lembrete diário (WorkManager + NotificationManager)
 **Files:** Create `notif/Lembrete.kt` (`mostrar(context)`, `agendar(context)`), `RotinaApp.kt` (Application); Modify Manifest (`POST_NOTIFICATIONS`), MainActivity (permissão runtime, canal "lembretes").
 **Interfaces:** Consumes Tarefa 3 (tela); Produces canal "lembretes" + agendamento único `lembrete-diario` (PeriodicWork 24h, initialDelay até 20:00, política KEEP).
-- [ ] Passo 1: canal + permissão runtime pedida na primeira tela; negação não trava o app
-- [ ] Passo 2: agendar no `onCreate` do Application com KEEP
-- [ ] Passo 3: botão temporário **apenas em debug** "Testar lembrete" → notificação aparece no celular
-- [ ] Passo 4: commit `feat: lembrete diário às 20:00`
+- [x] Passo 1: canal + permissão runtime pedida na primeira tela; negação não trava o app ✅ (concedida validada em `dumpsys`; `mostrar` sai cedo sem permissão)
+- [x] Passo 2: agendar no `onCreate` do Application com KEEP ✅ (job registrado: `jobscheduler` mostra `androidx.work.systemjobscheduler@com.rotina`)
+- [x] Passo 3: botão temporário **apenas em debug** "Testar lembrete" → notificação aparece no celular ✅ (card "Rotina • agora 🔔 Hora de registrar as metas de hoje!" no shade em 01:34; crash de "small icon" descoberto e corrigido — ver Ruling 6)
+- [x] Passo 4: commit `feat: lembrete diário às 20:00` → `a52dff8`
 
 ### Tarefa 5: Fechamento do Marco 1
 - [ ] Passo 1: desinstalar, reinstalar do zero → seed + checklist OK (Review Focus)

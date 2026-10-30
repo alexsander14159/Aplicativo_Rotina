@@ -2,8 +2,8 @@
 
 Atualizado: 2026-10-30
 
-## Estado atual: Fase 3 em execução — Marco 1 (Tarefas 1–3 feitas no código/tests; Tarefa 4 = notificação, próxima)
-**⏳ Bloqueio:** celular não conectado. Ao ligar (USB debugging), agrupa: install (T1p4) + seed (T2p2) + marcação/persistência (T3p3) → Tarefa 4.
+## Estado atual: Fase 3 em execução — Marco 1 (Tarefas 1–4 FEITAS no celular; falta Tarefa 5 = fechamento)
+**Resta:** Tarefa 5 — desinstalar/reinstalar do zero + checklist manual completo + mudança de data manual → aprovação do Marco 2.
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -63,19 +63,24 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 
 | Tarefa | Estado |
 |---|---|
-| 1. Esqueleto projeto | ✅ código/build/commit — ⏳ só falta instalar no celular |
-| 2. Room + seed | ✅ código/build/commit — ⏳ seed visual no celular |
-| 3. ViewModel + checklist | ✅ código/build/commit + **teste unitário 2/2 PASS** — ⏳ verificação no celular |
-| 4. Lembrete diário | ⏳ próxima |
-| 5. Fechamento do marco | ⏳ |
+| 1. Esqueleto projeto | ✅ completo (instalado e aberto no TECNO KL4) |
+| 2. Room + seed | ✅ completo (seed das 6 metas vista na tela) |
+| 3. ViewModel + checklist | ✅ completo (persistência 6/6 pós.force-stop; ciclo marca/desmarca; teste unitário 2/2 — muda-data manual pendente) |
+| 4. Lembrete diário | ✅ completo (canal+permissão+job agendado; botão debug mostrou card 🔔 no shade) |
+| 5. Fechamento do marco | ⏳ próxima |
 
-**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist
+**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
 **Rulings (decisões anotadas ao vivo):**
 - T1: `kotlin-android` removido — AGP 9 tem **Kotlin embutido** (erro mostrado com texto completo, causa confirmada na doc oficial "Migrate to built-in Kotlin")
 - T2: DTO `EstadoMeta` **achatado** (sem `@Embedded`) — evita bug conhecido do KSP/built-in Kotlin (`[MissingType]`, família issue #3053); sem mudança semântica
 - T2: `arrayOf<Any>(nome, ordem)` no seed — o aviso do compilador (inferência p/ `Comparable`) quebraria o binding no celular
 - T3 (além do plano): `DAO.obter()` + `Mutex` no `alternar` — protege contra toques rápidos duplicados; custo: 1 consulta a mais por toque
+- T3 (bug do plano): **`@Upsert` do Room resolve conflito de índice único com UPDATE por PRIMARY KEY** — item chega com `id=0` → `WHERE id=0` → 0 linhas afetadas, silencioso (marcava, mas nunca desmarcava!). Fix: `atual.copy(concluida = ...)` preserva o id real; item de verdade novo usa `id=0` para inserir. Confirmado lendo o SQL gerado (`RotinaDao_Impl.kt`) e o banco via `run-as`+Python
+- T3 (UI): linha do checklist usa **`Row.toggleable` + Checkbox passivo (`onCheckedChange = null`)** — um único handler por toque (acessibilidade certa, `Role.Checkbox`)
+- T3 (ferramentas): **dump do banco no aparelho** = `python -c ... subprocess adb exec-out run-as cat` (PowerShell corrompe binário via `>`/UTF-16); `uiautomator dump` provou focus/foco do app
+- T4 (bug achado no aparelho): manifest sem `android:icon` → `applicationInfo.icon == 0` → `IllegalArgumentException: Invalid notification (no valid small icon)` e **crash** no botão de teste. Fix: `res/drawable/ic_notificacao.xml` (sino) + `android:icon` no manifest + `setSmallIcon(R.drawable.ic_notificacao)`
+- T4 (imprevisto): usuário usando o aparelho em paralelo → toque do adb caía no Instagram; solução: am start + conferir `mCurrentFocus` + tocar, em cadeia única
 - Geral: verificação no aparelho **agrupada** (celular desconectado na hora) — descoberta de bug de runtime fica deslocada no tempo; mitigado por checklist manual detalhado
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
