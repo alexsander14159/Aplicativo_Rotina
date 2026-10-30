@@ -2,9 +2,8 @@
 
 Atualizado: 2026-10-30
 
-## Estado atual: Fase 3 em execução — Marco 1 (Tarefas 1–4 FEITAS no celular; falta Tarefa 5 = fechamento)
-**Resta:** Tarefa 5 — desinstalar/reinstalar do zero + checklist manual completo + mudança de data manual → aprovação do Marco 2.
-**Guia de leitura:** Fase 2 (criação do PLANO.md) está na seção `## ✅ Fase 2` mais abaixo; o aparelho TECNO SPARK GO 1 é vendido com o código de modelo **KL4** (mesmo aparelho, dois nomes).
+## Estado atual: Fase 3 em execução — Marco 2 (spec v2 "rotina diária" aprovada; Marco 1 concluído no celular)
+**Próxima ação:** Tarefa 2.1 — entidades/migration v2 + DAO. EM seguida 2.2 e 2.3.
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -64,11 +63,10 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 
 | Tarefa | Estado |
 |---|---|
-| 1. Esqueleto projeto | ✅ completo (instalado e aberto no TECNO KL4) |
-| 2. Room + seed | ✅ completo (seed das 6 metas vista na tela) |
-| 3. ViewModel + checklist | ✅ completo (persistência 6/6 pós.force-stop; ciclo marca/desmarca; teste unitário 2/2 — muda-data manual pendente) |
-| 4. Lembrete diário | ✅ completo (canal+permissão+job agendado; botão debug mostrou card 🔔 no shade) |
-| 5. Fechamento do marco | ⏳ próxima |
+| Marco 2.1 Dados v2 (migration, entities, DAO) | ⏳ em execução |
+| Marco 2.2 Dia do usuário (submetas, alvo, folga) | ⏳ |
+| Marco 2.3 Gerenciar metas (CRUD) + testes | ⏳ |
+| Marco 2.4 Fechamento Marco 2 | ⏳ |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 

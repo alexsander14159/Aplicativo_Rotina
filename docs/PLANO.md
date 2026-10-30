@@ -1,130 +1,133 @@
-# PLANO — App Rotina
+# PLANO — App Rotina (v2: rotina diária customizável)
 
-> **Execução (Fase 3):** implementação pelo maestro/dev, ajuda leve do OpenCode 1 (textos/docs), máx. 2 agentes. Passos com `- [ ]` para acompanhar progresso.
+> **Execução (Fase 3):** maestro/dev + OpenCode 1 para tarefas leves (via maestri). 1 tarefa Gradle por vez. Commits pt-BR pequenos. Antes de "pronto": compilar + instalar + testar no celular.
 
-**Objetivo:** app Android nativo de produtividade pessoal — metas diárias/semanais, treino da semana editável, notificações e diário por áudio com IA (fase posterior).
+**Objetivo:** app nativo de **rotina diária** — metas customizáveis com submetas, alvo do dia (ex.: "2h"), lembrete com horário configurável que abre o resumo do dia, treino editável, diário por áudio com IA no fim.
 
-**Arquitetura:** MVVM simples — Room como fonte de verdade, ViewModel com StateFlow, UI em Jetpack Compose (Material 3), WorkManager para lembretes. **1 módulo único (`app`)** para manter Gradle barato no notebook fraco.
+**Arquitetura:** MVVM — Room (fonte de verdade) + ViewModel StateFlow + Compose M3 + WorkManager. 1 módulo `app`.
 
-**Stack confirmada:** Kotlin, Jetpack Compose (Material 3), Room, WorkManager.
+**Decisões da spec v2 (aprovadas em 30/10/2026):**
+- **Sem nada semanal**: a âncora única é a data do celular (epochDay, como no Marco 1)
+- Metas podem ser **renomeadas/criadas/apagadas/reordenadas** — as 6 do seed são apenas o início
+- Meta pode ter **submetas** (ex.: "Horas de estudo" → "Estudar Java"), cada submeta se marca no dia
+- **Meta é independente**: checkbox próprio; submetas não fecham a meta
+- **Alvo diário** em texto na meta ("2h", "8 copos"); valor digitado entra depois, se faltar
+- **Lembrete configurável no app** (horário) e notificação leva ao **resumo do dia** (Marco 3)
+- **"Hoje é folga"**: um toque marca o dia atípico (feriado etc.) — histórico não cobra
 
-## Restrições globais (valem para toda tarefa)
-- minSdk 26 | targetSdk 37 | compileSdk 37 — aparelho de teste: TECNO SPARK GO 1, Android 14
-- **1 tarefa Gradle por vez**; usar apenas `assembleDebug`, `installDebug` e testes unitários pontuais; nunca encadear builds
-- Versões das dependências fixadas na Tarefa 1 (via context7) e registradas em docs/STATUS.md
-- Chaves de API: nunca no código — ambiente ou `local.properties`; `.gitignore` desde a Tarefa 1
-- Commits pequenos em português (`feat:`, `fix:`, `docs:`)
-- Nada de instalação de ferramentas novas sem aprovação; OpenCode 1 só tarefas leves
-
-## Critério de pronto (todas as tarefas)
-`gradlew assembleDebug` OK → `adb install -r` no celular → funcional testado no aparelho → commit pt-BR → STATUS.md atualizado.
-
-## Review Focus (falhas prováveis que nenhum teste cobre)
-| Entrada/falha | Comportamento esperado | Teste pinado |
-|---|---|---|
-| Primeira execução, banco vazio | As 6 metas aparecem (seed) | Tarefa 2 |
-| Dia muda no aparelho | Checklist novo e limpo para a data de hoje | Tarefa 3 |
-| Usuário nega POST_NOTIFICATIONS | App não trava; lembrete só não é exibido | Tarefa 4 |
-| Processo morto durante uso | Estado vem do Room ao reabrir, sem duplicar | Tarefa 3 |
-| Reinício do aparelho | Lembrete re-agenda sozinho (KEEP no Application) | Tarefa 4 |
-
----
-
-## Marco 1 — Metas diárias com checklist + Room + lembrete (próximo)
-
-**Meta do marco:** as 6 metas diárias do spec aparecerem como checklist marcável, salvo em Room, com lembrete diário às **20:00**, rodando no seu celular.
-
-**Esquema Room (fixado):**
+## Esquema Room (v2, fixado)
 ```kotlin
 @Entity(tableName = "metas_dia")
 data class Meta(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val nome: String,      // "Horas de estudo", "Água", "Questões feitas", "Academia", "Dias produtivos", "Comer direito"
+    val nome: String,
+    val ordem: Int,
+    val alvoTexto: String = ""           // "2h de estudo", "" = sem alvo
+)
+
+@Entity(tableName = "submetas",            // item da rotina, ligado a uma meta
+        indices = [Index("metaId")])
+data class Submeta(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val metaId: Long,
+    val nome: String,
     val ordem: Int
 )
 
-@Entity(tableName = "checklist",
-        indices = [Index(value = ["data", "metaId"], unique = true)])
-data class ChecklistDia(
+@Entity(tableName = "submeta_dia",         // marcação diária da submeta
+        indices = [Index(value = ["data", "submetaId"], unique = true)])
+data class SubmetaDia(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val data: Long,        // LocalDate.toEpochDay() do aparelho
-    val metaId: Long,
+    val data: Long,
+    val submetaId: Long,
     val concluida: Boolean
 )
 
-data class EstadoMeta(val meta: Meta, val concluida: Boolean?)  // null = ainda sem registro hoje
+@Entity(tableName = "dias")                // anotação do dia: folga
+data class Dia(
+    @PrimaryKey val data: Long,          // chave natural — sem autoGenerate
+    val folga: Boolean
+)
+
+// checklist (Marco 1) segue igual: ChecklistDia(data, metaId, concluida)
 ```
-> **Nota (ver Rulings T3 em docs/STATUS.md):** item **novo** usa `id=0` (inserção); para atualizar, o item precisa preservar o id real da linha — o `@Upsert` do Room resolve conflito de índice único por PRIMARY KEY.
+- **Sem FK/CASCADE**: apagar meta = `@Transaction` apagando submeta_dia das submetas dela, depois submetas, depois checklist, depois a meta (leções do Marco 1 — ver Rulings em STATUS.md)
 
-@Dao
-interface RotinaDao {
-    fun metas(): Flow<List<Meta>>
-    fun checklistDoDia(data: Long): Flow<List<EstadoMeta>>
-    @Upsert suspend fun salvar(item: ChecklistDia)
-}
-```
+## Restrições globais (valem para toda tarefa)
+- minSdk 26 | targetSdk 37 | compileSdk 37 — aparelho: TECNO SPARK GO 1 (KL4), Android 14
+- **1 tarefa Gradle por vez**; só `assembleDebug`, `testDebugUnitTest` e `install -r`
+- Versões fixadas em docs/STATUS.md; **nunca re-add `kotlin-android`** (AGP 9 embutido); kapt morto — KSP
+- API keys nunca no código; `.gitignore` cobre local.properties
+- Commits pt-BR (`feat:`, `fix:`, `docs:`); migrations Room com version bump explícito
+- **Ruling upsert-PK**: escrita que atualiza linha existente preserva o `id` real (`copy()`); exceção: `Dia`, cuja PK é natural (`data` — `@Upsert` resolve pela própria chave)
+- Deleção `@Transaction` conforme bloco acima (sem FK)
 
-### Tarefa 1: Esqueleto do projeto
-**Files:** Create `settings.gradle.kts`, `build.gradle.kts` (raiz + `app`), `gradle/libs.versions.toml`, `app/src/main/AndroidManifest.xml`, `MainActivity.kt` (título "Rotina", tema M3), `.gitignore` (`local.properties`, `.gradle/`, `build/`, `*.jks`, `.idea/`).
-**Interfaces:** Produces applicationId `com.rotina`.
-- [x] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrando em docs/STATUS.md
-- [x] Passo 2: MainActivity com tela mínima em Material 3
-- [x] Passo 3: `gradlew assembleDebug` → OK
-- [x] Passo 4: `adb install -r` → "Rotina" abre no celular ✅ (TECNO KL4/Spark Go 1, abriu hoje 01:17)
-
-- [x] Passo 5: `git init` + commit `feat: esqueleto do projeto com tema Material 3` → `5139192`
-
-### Tarefa 2: Room + seed
-**Files:** Create `data/Meta.kt`, `data/ChecklistDia.kt`, `data/RotinaDao.kt`, `data/RotinaDb.kt` (seed das 6 metas via `RoomDatabase.Callback`).
-**Interfaces:** Consumes Restrições globais; Produces `RotinaDao` e `RotinaDb.get(context)` (assinaturas acima).
-- [x] Passo 1: entidades, DAO e banco + seed ordem 1..6
-- [x] Passo 2: `assembleDebug` OK ✅ → instalar → primeiro run no celular mostra as 6 metas (Review Focus: seed) ✅ seed confirmada na tela em 01:18
-- [x] Passo 3: commit `feat: room com metas e checklist diário` → `05f2d63`
-
-### Tarefa 3: ViewModel + tela de checklist
-**Files:** Create `ui/RotinaViewModel.kt`, `ui/TelaMetas.kt`; Modify `MainActivity.kt`.
-**Interfaces:** Consumes `RotinaDao`; Produces `RotinaViewModel` (`val metas: StateFlow<List<EstadoMeta>>`, `fun alternar(metaId: Long)`) e composable `TelaMetas(vm)`.
-- [x] Passo 1: teste JVM da lógica pura `proximoEstado(atual: Boolean?): Boolean` — null→true, false→true, true→false. Run: `gradlew testDebugUnitTest` (1 tarefa só). Esperado: PASS — **feito: RED (função inexistente) → GREEN, XML: tests="2" failures="0"**
-- [x] Passo 2: ViewModel + LazyColumn com checkbox e data de hoje no topo
-- [x] Passo 3: no celular — marcar metas, fechar app, reabrir → seguem marcadas ✅ (force-stop + reabrir: 6/6 persistiram; ciclo marcar/desmarcar confirmado no banco via `run-as`+Python); ⏳ mudar a data do aparelho → lista nova vazia → teste manual na Tarefa 5
-- [x] Passo 4: commit `feat: checklist diário persistente` → `32aff6c`
-
-### Tarefa 4: Lembrete diário (WorkManager + NotificationManager)
-**Files:** Create `notif/Lembrete.kt` (`mostrar(context)`, `agendar(context)`), `RotinaApp.kt` (Application); Modify Manifest (`POST_NOTIFICATIONS`), MainActivity (permissão runtime, canal "lembretes").
-**Interfaces:** Consumes Tarefa 3 (tela); Produces canal "lembretes" + agendamento único `lembrete-diario` (PeriodicWork 24h, initialDelay até 20:00, política KEEP).
-- [x] Passo 1: canal + permissão runtime pedida na primeira tela; negação não trava o app ✅ (concedida validada em `dumpsys`; `mostrar` sai cedo sem permissão)
-- [x] Passo 2: agendar no `onCreate` do Application com KEEP ✅ (job registrado: `jobscheduler` mostra `androidx.work.systemjobscheduler@com.rotina`)
-- [x] Passo 3: botão temporário **apenas em debug** "Testar lembrete" → notificação aparece no celular ✅ (card "Rotina • agora 🔔 Hora de registrar as metas de hoje!" no shade em 01:34; crash de "small icon" descoberto e corrigido — ver Ruling 6)
-- [x] Passo 4: commit `feat: lembrete diário às 20:00` → `a52dff8`
-
-### Tarefa 5: Fechamento do Marco 1
-- [ ] Passo 1: desinstalar, reinstalar do zero → seed + checklist OK (Review Focus)
-- [ ] Passo 2: checklist manual completo no aparelho (itens do marco)
-- [ ] Passo 3: STATUS.md atualizado → pedir aprovação do Marco 2
-
-**Pronto quando:** instala e roda no TECNO; 6 metas aparecem; marcação persiste; notificação de teste aparece; lembrete agendado às 20:00; commits pt-BR.
+## Review Focus (falhas prováveis que nenhum teste cobre)
+| Entrada/falha | Comportamento esperado | Teste pinado |
+|---|---|---|
+| App instalado v1 atualiza para v2 | Migration preserva metas + histórico; `alvoTexto` vazio; nada quebra | Tarefa 2.1 |
+| Apagar meta com submetas e marcas | `@Transaction` mata dependências; tela do dia re-renderiza limpa, sem órfãs | 2.3 |
+| Toques rapidíssimos em submetas | Mesmo padrão Mutex + `copy(id)` do Marco 1 — sem flip duplo | 2.2 |
+| Usuário apagar TODAS as metas | Tela vazia com botão "Nova meta"; sem crash | 2.3 |
+| "Hoje é folga" ligado/desligado no dia | Anotação por data; checklist continua editável normalmente | 2.2 |
 
 ---
 
-## Marcos seguintes (resumo + critério de pronto)
+## Marcos seguintes (critérios de pronto)
+- **Marco 3 — Lembrete configurável + resumo do dia:** horário editável no app (reagenda com KEEP corretamente); tocar na notificação abre o app no dia; tela "resumo" mostra dias passados (marcados, folgas) navegáveis. *Pronto:* horário muda e a notificação segue; histórico testado no celular.
+- **Marco 4 — Treino da semana editável:** treinos por dia da semana (CRUD simples, visual na rotina). *Pronto:* CRUD persiste e aparece; testado no celular.
+- **Marco 5 — Diário por áudio → texto:** ANTES de codificar: pesquisa STT local vs API (custo/privacidade), entrego pro usuário; confirmar o que o plano Gemini estudante cobre. *Pronto:* gravar → texto salvo por dia.
+- **Marco 6 — IA analisa os dias:** resumo de registros + diários. *Pronto:* análise aparece no app; chave fora do código.
 
-**Marco 2 — Metas semanais + valores:** alvos semanais editáveis (horas de estudo, água, questões, academia, comer direito) e "Dias produtivos" como métrica da semana (conta dias com tudo marcado); semana de **segunda a domingo**.
-*Pronto:* tela semanal mostra alvo + progresso correto; testado no celular.
+---
 
-**Marco 3 — Treino da semana editável:** criar/editar/remover treinos por dia da semana.
-*Pronto:* CRUD de treinos persiste e aparece na semana; testado no celular.
+## ✅ Marco 1 — concluído (verificado no celular)
+Checklist diário das 6 metas com Room, seed, lembrete fixo 20:00 com botão de teste em debug. Commits: `5139192` → `05f2d63` → `32aff6c` → `1f04113` → `eda4fa9` → `a52dff8` → `d70b315` → `e96cf5d`. Detalhes e rulings em docs/STATUS.md.
 
-**Marco 4 — Notificações configuráveis:** horário do lembrete editável + avisos por regra (ex.: "até 18h sem marcar nada").
-*Pronto:* horário editável no app; aviso por regra chega; testado no celular.
+---
 
-**Marco 5 — Diário por áudio → texto:** antes de codificar, pesquisa de opções (STT local do Android vs API), custo e privacidade, entregue para você; confirmar o que o plano Gemini estudante cobre.
-*Pronto:* gravar áudio → texto salvo por dia; opção aprovada previamente; testado no celular.
+## Marco 2 — Metas/submetas customizáveis + alvo do dia + folga (em execução)
 
-**Marco 6 — IA analisa os dias:** análise da IA sobre registros + diários.
-*Pronto:* resumo gerado pela IA; chaves fora do código; testado no celular.
+### Tarefa 1: Dados v2 — migration + entities + DAO
+**Files:** Modify `data/Meta.kt` (coluna `alvoTexto`), `data/RotinaDb.kt` (version 2 + MIGRATION + seed ajustado se preciso); Create `data/Submeta.kt`, `data/SubmetaDia.kt`, `data/Dia.kt`; Modify `data/RotinaDao.kt` (novas funções + DTOs achatados, sem `@Embedded` — Ruling T2).
+**Interfaces (produz, assinaturas fixas):**
+- DAO: `metas(): Flow<List<Meta>>` (mantém) | `checklistDoDia(data: Long): Flow<List<EstadoMeta>>` (SQL atualizado com `alvoTexto`) | `obter(data, metaId)` / `salvar(ChecklistDia)` (mantém) | `submetasDoDia(data): Flow<List<EstadoSubmeta>>` | `submetaObter(data, submetaId): SubmetaDia?` | `submetaSalvar(SubmetaDia)` `@Upsert` | `metaSalvar(Meta)` `@Upsert` | `metaApagar(Meta)` `@Delete` | `submetaSalvarCfg(Submeta)` `@Upsert` | `submetaApagarCfg(Submeta)` `@Delete` | `diaCarregar(data): Flow<Dia?>` | `diaSalvar(Dia)` `@Upsert` | `apagarMetaComDependencias(meta)` `@Transaction`
+- DTOs flat: `EstadoMeta(id, nome, ordem, alvoTexto, concluida: Boolean?)`; `EstadoSubmeta(id, metaId, nome, ordem, metaOrdem, concluida: Boolean?)`
+**Migration (v1→v2):**
+```sql
+ALTER TABLE metas_dia ADD COLUMN alvoTexto TEXT NOT NULL DEFAULT '';
+CREATE TABLE IF NOT EXISTS submetas (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, metaId INTEGER NOT NULL, nome TEXT NOT NULL, ordem INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS index_submetas_metaId ON submetas (metaId);
+CREATE TABLE IF NOT EXISTS submeta_dia (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, data INTEGER NOT NULL, submetaId INTEGER NOT NULL, concluida INTEGER NOT NULL, PRIMARY KEY(id));
+CREATE UNIQUE INDEX IF NOT EXISTS index_submeta_dia_data_submetaId ON submeta_dia (data, submetaId);
+CREATE TABLE IF NOT EXISTS dias (data INTEGER NOT NULL, folga INTEGER NOT NULL, PRIMARY KEY(data));
+```
+- [ ] Passo 1: entities + DTOs + DAO (SQLs conforme assinaturas; JOINs achatados, ordenação `m.ordem, s.ordem`)
+- [ ] Passo 2: RotinaDb version 2 + MIGRATION_1_2 (SQL acima) — seed não muda (6 metas, `alvoTexto` vazio)
+- [ ] Passo 3: `gradlew assembleDebug` OK
+- [ ] Passo 4: celular — `install -r` (mantém DB!) → abrir sem crash → confirmar por `run-as`+Python: coluna `alvoTexto` ok, tabelas novas ok, metas/histórico intactos (migration real)
+- [ ] Passo 5: commit `feat: dados v2 com submetas, alvo do dia e folga`
 
-## Regras de execução (Fase 3)
-- Máx. 2 agentes; OpenCode 1 apenas tarefas leves (maestri; fallback: docs/TAREFAS.md + STATUS.md)
-- TDD onde é barato (lógica pura em JVM); o resto verificado no aparelho
-- Antes de dizer "pronto": compilar, instalar e testar no celular
-- Errar = mostrar o erro completo e parar
+### Tarefa 2: Dia do usuário atualizado — alvo + submetas + folga
+**Files:** Modify `ui/RotinaViewModel.kt`, `ui/TelaMetas.kt`, `MainActivity.kt` (nada se UI declinável); Create nada.
+**Interfaces:** Consumes Tarefa 1; Produces no VM: `submetasDoDia: StateFlow<List<EstadoSubmeta>>`, `dia: StateFlow<Dia?>`, `alternarSubmeta(submetaId: Long)`, `alternarFolga()`.
+- [ ] Passo 1: VM — flow `dia` + `alternarFolga` (upsert `Dia(data, folga)`) + `alternarSubmeta` (Mutex + obter/copy/salvar, padrão Ruling upsert-PK)
+- [ ] Passo 2: UI — submetas listadas recuadas sob a meta (poucas linhas), toggle por submeta; alvo (`alvoTexto`) como texto de apoio; chip "Hoje é folga" no topo
+- [ ] Passo 3: `assembleDebug` → instalar → testar no celular: marcar submeta, marcar folga, reabrir (persistência) + DB via `run-as`
+- [ ] Passo 4: commit `feat: submetas marcáveis, alvo exibido e folga do dia`
+
+### Tarefa 3: Gerenciar metas (CRUD) + submetas CRUD
+**Files:** Create `ui/TelaMetasEdit.kt` (ou ficheiro similar); Modify VM, TelaMetas, MainActivity.
+**Interfaces:** Consumes Tarefa 1; Produces no VM: `criarMeta(nome: String, alvoTexto: String)`, `atualizarMeta(meta: Meta)`, `apagarMeta(metaId: Long)` (chama `apagarMetaComDependencias` e reordena), `criarSubmeta(metaId: Long, nome: String)`, `apagarSubmeta(submeta: Submeta)`, `moverMeta(metaId: Long, deslocamento: Int)`.
+- [ ] Passo 1: TDD lógica pura (JVM): `ordensAposTrocar(List<Int>, de, para)` (swap) e `ordensAposRemover(List<Int>, pos)` (compacta) — RED → GREEN
+- [ ] Passo 2: tela "Metas" (acessível pelo topo): lista com editar/apagar/mover; diálogo de editar (nome + alvo) e submetas (adicionar/apagar), confirmação no apagar meta
+- [ ] Passo 3: `gradlew testDebugUnitTest` OK (2 novas) → `assembleDebug`
+- [ ] Passo 4: celular — criar meta, renomear, trocar de ordem, apagar meta com submetas (Review Focus), verificar DB limpo sem órfãs via `run-as`
+- [ ] Passo 5: commit `feat: gerenciar metas e submetas`
+
+### Tarefa 4: Fechamento Marco 2
+- [ ] Passo 1: desinstalar + reinstalar limpo → seed 6 metas + tudo criável do zero (Review Focus primeira execução)
+- [ ] Passo 2: checklist manual completo (marcar/desmarcar, submetas, folga, CRUD, histórico do dia anterior estático?)
+- [ ] Passo 3: STATUS.md atualizado → pedir aprovação do Marco 3
+
+**Pronto quando:** metas/submetas/alvos/folga funcionam e persistem no celular; migration v1→v2 suave; commits pt-BR; docs atualizados.
