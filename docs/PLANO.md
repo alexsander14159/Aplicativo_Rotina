@@ -102,19 +102,19 @@ CREATE TABLE IF NOT EXISTS submeta_dia (id INTEGER PRIMARY KEY AUTOINCREMENT NOT
 CREATE UNIQUE INDEX IF NOT EXISTS index_submeta_dia_data_submetaId ON submeta_dia (data, submetaId);
 CREATE TABLE IF NOT EXISTS dias (data INTEGER NOT NULL, folga INTEGER NOT NULL, PRIMARY KEY(data));
 ```
-- [ ] Passo 1: entities + DTOs + DAO (SQLs conforme assinaturas; JOINs achatados, ordenação `m.ordem, s.ordem`)
-- [ ] Passo 2: RotinaDb version 2 + MIGRATION_1_2 (SQL acima) — seed não muda (6 metas, `alvoTexto` vazio)
-- [ ] Passo 3: `gradlew assembleDebug` OK
-- [ ] Passo 4: celular — `install -r` (mantém DB!) → abrir sem crash → confirmar por `run-as`+Python: coluna `alvoTexto` ok, tabelas novas ok, metas/histórico intactos (migration real)
-- [ ] Passo 5: commit `feat: dados v2 com submetas, alvo do dia e folga`
+- [x] Passo 1: entities + DTOs + DAO (SQLs conforme assinaturas; JOINs achatados, ordenação `m.ordem, s.ordem` — além do plano: `diaObter(data)` suspend para leitura consistente sob Mutex)
+- [x] Passo 2: RotinaDb version 2 + MIGRATION_1_2 (SQL acima; `alvoTexto` com `@ColumnInfo(defaultValue = "")` para casar schema novo e migrado — seed não muda) ✅
+- [x] Passo 3: `gradlew assembleDebug` OK
+- [x] Passo 4: celular — `install -r` (mantém DB!) → abrir sem crash → confirmado por `run-as`+Python: coluna `alvoTexto` ok, tabelas novas ok, metas/histórico intactos (migration real no banco vivo)
+- [x] Passo 5: commit `feat: dados v2 com submetas, alvo do dia e folga` → `89872d2`
 
 ### Tarefa 2: Dia do usuário atualizado — alvo + submetas + folga
 **Files:** Modify `ui/RotinaViewModel.kt`, `ui/TelaMetas.kt`, `MainActivity.kt` (nada se UI declinável); Create nada.
 **Interfaces:** Consumes Tarefa 1; Produces no VM: `submetasDoDia: StateFlow<List<EstadoSubmeta>>`, `dia: StateFlow<Dia?>`, `alternarSubmeta(submetaId: Long)`, `alternarFolga()`.
-- [ ] Passo 1: VM — flow `dia` + `alternarFolga` (upsert `Dia(data, folga)`) + `alternarSubmeta` (Mutex + obter/copy/salvar, padrão Ruling upsert-PK)
-- [ ] Passo 2: UI — submetas listadas recuadas sob a meta (poucas linhas), toggle por submeta; alvo (`alvoTexto`) como texto de apoio; chip "Hoje é folga" no topo
-- [ ] Passo 3: `assembleDebug` → instalar → testar no celular: marcar submeta, marcar folga, reabrir (persistência) + DB via `run-as`
-- [ ] Passo 4: commit `feat: submetas marcáveis, alvo exibido e folga do dia`
+- [x] Passo 1: VM — flow `dia` + `alternarFolga` (upsert `Dia(data, folga)`) + `alternarSubmeta` (Mutex + obter/copy/salvar, padrão Ruling upsert-PK) ✅ `dcbdc27`
+- [x] Passo 2: UI — submetas listadas recuadas sob a meta (poucas linhas), toggle por submeta; alvo (`alvoTexto`) como texto de apoio; chip "Hoje é folga" no topo ✅
+- [x] Passo 3: `assembleDebug` → instalar → testar no celular: erro de padding duplo na compilação (mostrado, corrigido); folga ON→OFF provada no visual + DB (`dias[20756]=1→0`); `submeta_dia` sem órfãs. Toggle de submeta fica pro e2e da Tarefa 3 (sem submetas criáveis ainda)
+- [x] Passo 4: commit `feat: submetas marcáveis, alvo exibido e folga do dia` → `dcbdc27`
 
 ### Tarefa 3: Gerenciar metas (CRUD) + submetas CRUD
 **Files:** Create `ui/TelaMetasEdit.kt` (ou ficheiro similar); Modify VM, TelaMetas, MainActivity.
