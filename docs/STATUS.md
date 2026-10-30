@@ -65,8 +65,8 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 |---|---|
 | Marco 2.1 Dados v2 (migration, entities, DAO) | ✅ (`89872d2` — migration provada no banco real) |
 | Marco 2.2 Dia do usuário (submetas, alvo, folga) | ✅ (`dcbdc27` — folga ON→OFF provada visual+DB) |
-| Marco 2.3 Gerenciar metas (CRUD) + testes | ⏳ em execução |
-| Marco 2.4 Fechamento Marco 2 | ⏳ |
+| Marco 2.3 Gerenciar metas (CRUD) + testes | ✅ (TDD 4/4; criar/editar/mover/apagar e submetas provados no celular) |
+| Marco 2.4 Fechamento Marco 2 | ✅ (seed+schema conferidos; migração, folga, submetas, CRUD e TDD validados; pendência menor: tap no checkbox no modelo novo requer ajuste de foco — documentado) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
