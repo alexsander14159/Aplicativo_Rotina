@@ -29,13 +29,18 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         viewModelScope.launch {
             alternancia.withLock {
                 val atual = dao.obter(dataDeHoje, metaId)
-                dao.salvar(
+                // IMPORTANTE: preservar o id da linha existente — @Upsert resolve conflito
+                // de índice único via UPDATE por PRIMARY KEY; item novo usa id=0 (auto).
+                val novo = if (atual != null) {
+                    atual.copy(concluida = proximoEstado(atual.concluida))
+                } else {
                     ChecklistDia(
                         data = dataDeHoje,
                         metaId = metaId,
-                        concluida = proximoEstado(atual?.concluida),
-                    ),
-                )
+                        concluida = proximoEstado(null),
+                    )
+                }
+                dao.salvar(novo)
             }
         }
     }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,11 +20,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 
 @Composable
-fun TelaMetas(vm: RotinaViewModel) {
+fun TelaMetas(
+    vm: RotinaViewModel,
+    onTesteLembrete: (() -> Unit)? = null,
+) {
     val metas by vm.metas.collectAsState()
     val rotuloData = LocalDate.ofEpochDay(vm.dataDeHoje).toString()
 
@@ -39,19 +45,26 @@ fun TelaMetas(vm: RotinaViewModel) {
                     text = "Metas de hoje — $rotuloData",
                     style = MaterialTheme.typography.titleMedium,
                 )
+                if (onTesteLembrete != null) {
+                    Button(onClick = onTesteLembrete) {
+                        Text("Testar lembrete (debug)")
+                    }
+                }
                 LazyColumn {
                     items(metas) { estado ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { vm.alternar(estado.id) }
+                                .toggleable(
+                                    value = estado.concluida == true,
+                                    role = Role.Checkbox,
+                                    onValueChange = { vm.alternar(estado.id) },
+                                )
                                 .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Checkbox(
-                                checked = estado.concluida == true,
-                                onCheckedChange = { vm.alternar(estado.id) },
-                            )
+                            // Checkbox passivo: o clique é do toggleable da linha (sem duplo disparo).
+                            Checkbox(checked = estado.concluida == true, onCheckedChange = null)
                             Text(text = estado.nome, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
