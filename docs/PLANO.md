@@ -65,26 +65,27 @@ interface RotinaDao {
 ### Tarefa 1: Esqueleto do projeto
 **Files:** Create `settings.gradle.kts`, `build.gradle.kts` (raiz + `app`), `gradle/libs.versions.toml`, `app/src/main/AndroidManifest.xml`, `MainActivity.kt` (título "Rotina", tema M3), `.gitignore` (`local.properties`, `.gradle/`, `build/`, `*.jks`, `.idea/`).
 **Interfaces:** Produces applicationId `com.rotina`.
-- [ ] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrar em docs/STATUS.md
-- [ ] Passo 2: MainActivity com tela mínima em Material 3
-- [ ] Passo 3: `gradlew assembleDebug` → OK
-- [ ] Passo 4: `adb install -r` → "Rotina" abre no celular
-- [ ] Passo 5: `git init` + commit `feat: esqueleto do projeto com tema Material 3`
+- [x] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrar em docs/STATUS.md
+- [x] Passo 2: MainActivity com tela mínima em Material 3
+- [x] Passo 3: `gradlew assembleDebug` → OK
+- [ ] Passo 4: `adb install -r` → "Rotina" abre no celular (⏳ celular não conectado — verificação agrupada)
+
+- [x] Passo 5: `git init` + commit `feat: esqueleto do projeto com tema Material 3` → `5139192`
 
 ### Tarefa 2: Room + seed
 **Files:** Create `data/Meta.kt`, `data/ChecklistDia.kt`, `data/RotinaDao.kt`, `data/RotinaDb.kt` (seed das 6 metas via `RoomDatabase.Callback`).
 **Interfaces:** Consumes Restrições globais; Produces `RotinaDao` e `RotinaDb.get(context)` (assinaturas acima).
-- [ ] Passo 1: entidades, DAO e banco + seed ordem 1..6
-- [ ] Passo 2: `assembleDebug` OK → instalar → primeiro run no celular mostra as 6 metas (Review Focus: seed)
-- [ ] Passo 3: commit `feat: room com metas e checklist diário`
+- [x] Passo 1: entidades, DAO e banco + seed ordem 1..6
+- [ ] Passo 2: `assembleDebug` OK ✅ → instalar → primeiro run no celular mostra as 6 metas (Review Focus: seed) ⏳ agrupado
+- [x] Passo 3: commit `feat: room com metas e checklist diário` → `05f2d63`
 
 ### Tarefa 3: ViewModel + tela de checklist
 **Files:** Create `ui/RotinaViewModel.kt`, `ui/TelaMetas.kt`; Modify `MainActivity.kt`.
 **Interfaces:** Consumes `RotinaDao`; Produces `RotinaViewModel` (`val metas: StateFlow<List<EstadoMeta>>`, `fun alternar(metaId: Long)`) e composable `TelaMetas(vm)`.
-- [ ] Passo 1: teste JVM da lógica pura `proximoEstado(atual: Boolean?): Boolean` — null→true, false→true, true→false. Run: `gradlew testDebugUnitTest` (1 tarefa só). Esperado: PASS
-- [ ] Passo 2: ViewModel + LazyColumn com checkbox e data de hoje no topo
-- [ ] Passo 3: no celular — marcar 2 metas, fechar app, reabrir → seguem marcadas; mudar a data do aparelho → lista nova vazia
-- [ ] Passo 4: commit `feat: checklist diário persistente`
+- [x] Passo 1: teste JVM da lógica pura `proximoEstado(atual: Boolean?): Boolean` — null→true, false→true, true→false. Run: `gradlew testDebugUnitTest` (1 tarefa só). Esperado: PASS — **feito: RED (função inexistente) → GREEN, XML: tests="2" failures="0"**
+- [x] Passo 2: ViewModel + LazyColumn com checkbox e data de hoje no topo
+- [ ] Passo 3: no celular — marcar 2 metas, fechar app, reabrir → seguem marcadas; mudar a data do aparelho → lista nova vazia ⏳ agrupado
+- [x] Passo 4: commit `feat: checklist diário persistente` → `32aff6c`
 
 ### Tarefa 4: Lembrete diário (WorkManager + NotificationManager)
 **Files:** Create `notif/Lembrete.kt` (`mostrar(context)`, `agendar(context)`), `RotinaApp.kt` (Application); Modify Manifest (`POST_NOTIFICATIONS`), MainActivity (permissão runtime, canal "lembretes").

@@ -2,7 +2,11 @@
 
 Atualizado: 2026-10-30
 
-## Estado atual: Fase 2 concluída ✅ (docs/PLANO.md criado) | aguardando revisão/aprovação → Fase 3, Marco 1
+## Estado atual: Fase 3 em execução — Marco 1 (Tarefas 1–3 feitas no código/tests; Tarefa 4 = notificação, próxima)
+**⏳ Bloqueio:** celular não conectado. Ao ligar (USB debugging), agrupa: install (T1p4) + seed (T2p2) + marcação/persistência (T3p3) → Tarefa 4.
+
+## ✅ Versões fixadas (Tarefa 1)
+Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
 
 ## Agentes
 | Terminal | Modelo | Papel |
@@ -54,6 +58,25 @@ Atualizado: 2026-10-30
 | compose-rules.md | PatrickJS/awesome-cursorrules | `.gemini/compose-rules.md` |
 
 ---
+
+## 🚧 Fase 3 — andamento (Marco 1)
+
+| Tarefa | Estado |
+|---|---|
+| 1. Esqueleto projeto | ✅ código/build/commit — ⏳ só falta instalar no celular |
+| 2. Room + seed | ✅ código/build/commit — ⏳ seed visual no celular |
+| 3. ViewModel + checklist | ✅ código/build/commit + **teste unitário 2/2 PASS** — ⏳ verificação no celular |
+| 4. Lembrete diário | ⏳ próxima |
+| 5. Fechamento do marco | ⏳ |
+
+**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist
+
+**Rulings (decisões anotadas ao vivo):**
+- T1: `kotlin-android` removido — AGP 9 tem **Kotlin embutido** (erro mostrado com texto completo, causa confirmada na doc oficial "Migrate to built-in Kotlin")
+- T2: DTO `EstadoMeta` **achatado** (sem `@Embedded`) — evita bug conhecido do KSP/built-in Kotlin (`[MissingType]`, família issue #3053); sem mudança semântica
+- T2: `arrayOf<Any>(nome, ordem)` no seed — o aviso do compilador (inferência p/ `Comparable`) quebraria o binding no celular
+- T3 (além do plano): `DAO.obter()` + `Mutex` no `alternar` — protege contra toques rápidos duplicados; custo: 1 consulta a mais por toque
+- Geral: verificação no aparelho **agrupada** (celular desconectado na hora) — descoberta de bug de runtime fica deslocada no tempo; mitigado por checklist manual detalhado
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
