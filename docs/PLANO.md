@@ -53,6 +53,8 @@ data class ChecklistDia(
 )
 
 data class EstadoMeta(val meta: Meta, val concluida: Boolean?)  // null = ainda sem registro hoje
+```
+> **Nota (ver Rulings T3 em docs/STATUS.md):** item **novo** usa `id=0` (inserção); para atualizar, o item precisa preservar o id real da linha — o `@Upsert` do Room resolve conflito de índice único por PRIMARY KEY.
 
 @Dao
 interface RotinaDao {
@@ -65,7 +67,7 @@ interface RotinaDao {
 ### Tarefa 1: Esqueleto do projeto
 **Files:** Create `settings.gradle.kts`, `build.gradle.kts` (raiz + `app`), `gradle/libs.versions.toml`, `app/src/main/AndroidManifest.xml`, `MainActivity.kt` (título "Rotina", tema M3), `.gitignore` (`local.properties`, `.gradle/`, `build/`, `*.jks`, `.idea/`).
 **Interfaces:** Produces applicationId `com.rotina`.
-- [x] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrar em docs/STATUS.md
+- [x] Passo 1: fixar versões em `libs.versions.toml` (Compose BOM, Room, WorkManager, lifecycle) consultando context7 e registrando em docs/STATUS.md
 - [x] Passo 2: MainActivity com tela mínima em Material 3
 - [x] Passo 3: `gradlew assembleDebug` → OK
 - [x] Passo 4: `adb install -r` → "Rotina" abre no celular ✅ (TECNO KL4/Spark Go 1, abriu hoje 01:17)

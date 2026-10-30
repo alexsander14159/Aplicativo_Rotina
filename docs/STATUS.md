@@ -4,6 +4,7 @@ Atualizado: 2026-10-30
 
 ## Estado atual: Fase 3 em execução — Marco 1 (Tarefas 1–4 FEITAS no celular; falta Tarefa 5 = fechamento)
 **Resta:** Tarefa 5 — desinstalar/reinstalar do zero + checklist manual completo + mudança de data manual → aprovação do Marco 2.
+**Guia de leitura:** Fase 2 (criação do PLANO.md) está na seção `## ✅ Fase 2` mais abaixo; o aparelho TECNO SPARK GO 1 é vendido com o código de modelo **KL4** (mesmo aparelho, dois nomes).
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -22,7 +23,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - `ANDROID_HOME` definido | `platform-tools` no PATH
 - Gradle: usará Gradle Wrapper no projeto
 
-**Dispositivo de teste:** TECNO SPARK GO 1 / Android 14 (API 34)
+**Dispositivo de teste:** TECNO SPARK GO 1 (código de modelo KL4) / Android 14 (API 34)
 `minSdk = 26` | `targetSdk = 37` | `compileSdk = 37`
 
 ---
