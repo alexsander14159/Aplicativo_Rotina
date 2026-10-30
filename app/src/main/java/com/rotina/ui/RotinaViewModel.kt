@@ -4,8 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.rotina.data.ChecklistDia
+import com.rotina.data.Dia
 import com.rotina.data.EstadoMeta
+import com.rotina.data.EstadoSubmeta
 import com.rotina.data.RotinaDao
+import com.rotina.data.SubmetaDia
 import java.time.LocalDate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,15 +25,23 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
     val metas: StateFlow<List<EstadoMeta>> = dao.checklistDoDia(dataDeHoje)
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
+    val submetas: StateFlow<List<EstadoSubmeta>> = dao.submetasDoDia(dataDeHoje)
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    val dia: StateFlow<Dia?> = dao.diaCarregar(dataDeHoje)
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
     private val alternancia = Mutex()
 
-    /** Alterna a meta na fonte de verdade (banco), imune a toques rápidos em fila. */
+    /**
+     * Alterna a meta na fonte de verdade (banco), imune a toques rápidos em fila.
+     * IMPORTANTE: preservar o id da linha existente — @Upsert resolve conflito de índice
+     * único via UPDATE por PRIMARY KEY; item novo usa id=0 (auto). [Ruling Marco 1]
+     */
     fun alternar(metaId: Long) {
         viewModelScope.launch {
             alternancia.withLock {
                 val atual = dao.obter(dataDeHoje, metaId)
-                // IMPORTANTE: preservar o id da linha existente — @Upsert resolve conflito
-                // de índice único via UPDATE por PRIMARY KEY; item novo usa id=0 (auto).
                 val novo = if (atual != null) {
                     atual.copy(concluida = proximoEstado(atual.concluida))
                 } else {
@@ -41,6 +52,39 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
                     )
                 }
                 dao.salvar(novo)
+            }
+        }
+    }
+
+    /** Alterna a submeta no dia, mesmo padrão da meta (Mutex + copy do id real). */
+    fun alternarSubmeta(submetaId: Long) {
+        viewModelScope.launch {
+            alternancia.withLock {
+                val atual = dao.submetaObter(dataDeHoje, submetaId)
+                val novo = if (atual != null) {
+                    atual.copy(concluida = proximoEstado(atual.concluida))
+                } else {
+                    SubmetaDia(
+                        data = dataDeHoje,
+                        submetaId = submetaId,
+                        concluida = proximoEstado(null),
+                    )
+                }
+                dao.submetaSalvar(novo)
+            }
+        }
+    }
+
+    /** Ligar/desligar a folga do dia (feriado, cochilo, dia esquisito). */
+    fun alternarFolga() {
+        viewModelScope.launch {
+            alternancia.withLock {
+                val atual = dao.diaObter(dataDeHoje)
+                val novo = Dia(
+                    data = dataDeHoje,
+                    folga = proximoEstado(atual?.folga),
+                )
+                dao.diaSalvar(novo)
             }
         }
     }

@@ -74,6 +74,10 @@ interface RotinaDao {
     @Query("SELECT * FROM dias WHERE data = :data")
     fun diaCarregar(data: Long): Flow<Dia?>
 
+    /** Leitura pontual da anotação do dia (usada no alternarFolga sob Mutex). */
+    @Query("SELECT * FROM dias WHERE data = :data")
+    suspend fun diaObter(data: Long): Dia?
+
     @Upsert
     suspend fun diaSalvar(item: Dia)
 
