@@ -95,6 +95,27 @@ interface RotinaDao {
     @Delete
     suspend fun submetaApagarCfg(item: Submeta)
 
+    @Query("SELECT * FROM metas_dia WHERE id = :id")
+    suspend fun obterMeta(id: Long): Meta?
+
+    @Query("SELECT * FROM metas_dia ORDER BY ordem ASC")
+    suspend fun metasSincronas(): List<Meta>
+
+    @Query("SELECT COALESCE(MAX(ordem), 0) FROM metas_dia")
+    suspend fun maiorOrdemMeta(): Int
+
+    @Query("SELECT * FROM submetas ORDER BY metaId ASC, ordem ASC")
+    fun submetasCfg(): Flow<List<Submeta>>
+
+    @Query("SELECT * FROM submetas WHERE metaId = :metaId ORDER BY ordem ASC")
+    suspend fun submetasDaMeta(metaId: Long): List<Submeta>
+
+    @Query("SELECT COALESCE(MAX(ordem), 0) FROM submetas WHERE metaId = :metaId")
+    suspend fun maiorOrdemSubmeta(metaId: Long): Int
+
+    @Query("DELETE FROM submeta_dia WHERE submetaId = :submetaId")
+    suspend fun apagarMarcasDaSubmeta(submetaId: Long)
+
     @Query("DELETE FROM checklist WHERE metaId = :metaId")
     suspend fun apagarMarcasDaMeta(metaId: Long)
 
@@ -103,6 +124,13 @@ interface RotinaDao {
 
     @Query("DELETE FROM submetas WHERE metaId = :metaId")
     suspend fun apagarSubmetasDaMeta(metaId: Long)
+
+    /** Apaga a submeta e as marcações dela, numa única transação (sem FK). */
+    @Transaction
+    suspend fun apagarSubmetaComMarcas(item: Submeta) {
+        apagarMarcasDaSubmeta(item.id)
+        submetaApagarCfg(item)
+    }
 
     /** Apaga a meta e tudo que depende dela, numa única transação (sem FK). */
     @Transaction

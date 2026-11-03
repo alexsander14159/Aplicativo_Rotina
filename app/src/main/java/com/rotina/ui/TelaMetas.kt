@@ -15,6 +15,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import java.time.LocalDate
 fun TelaMetas(
     vm: RotinaViewModel,
     onTesteLembrete: (() -> Unit)? = null,
+    onEditarMetas: (() -> Unit)? = null,
 ) {
     val metas by vm.metas.collectAsState()
     val submetas by vm.submetas.collectAsState()
@@ -59,6 +61,9 @@ fun TelaMetas(
                         onClick = { vm.alternarFolga() },
                         label = { Text("Hoje é folga") },
                     )
+                    if (onEditarMetas != null) {
+                        TextButton(onClick = onEditarMetas) { Text("Metas") }
+                    }
                 }
                 Text(
                     text = "Metas de hoje — $rotuloData" + if (folga) " · folga 😌" else "",
