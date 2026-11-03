@@ -60,90 +60,98 @@ fun TelaMetas(
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Rotina",
-                        style = MaterialTheme.typography.headlineLarge,
-                        modifier = Modifier.weight(1f),
-                    )
-                    FilterChip(
-                        selected = folga,
-                        onClick = { vm.alternarFolga() },
-                        label = { Text(if (ehHoje) "Hoje é folga" else "Folga") },
-                    )
-                    if (onEditarMetas != null) {
-                        TextButton(onClick = onEditarMetas) { Text("Metas") }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = "Rotina",
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier.weight(1f),
+                        )
+                        FilterChip(
+                            selected = folga,
+                            onClick = { vm.alternarFolga() },
+                            label = { Text(if (ehHoje) "Hoje é folga" else "Folga") },
+                        )
+                        if (onEditarMetas != null) {
+                            TextButton(onClick = onEditarMetas) { Text("Metas") }
+                        }
                     }
                 }
 
                 // Navegação por data
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(
-                        onClick = vm::irParaDiaAnterior,
-                        contentPadding = PaddingValues(horizontal = 8.dp),
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("← Anterior")
-                    }
-                    Text(
-                        text = rotuloData(dataSelecionada, hoje) + "  📅",
-                        style = MaterialTheme.typography.titleMedium,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable(enabled = onAbrirCalendario != null) {
-                                onAbrirCalendario?.invoke()
-                            }
-                            .padding(vertical = 8.dp),
-                    )
-                    TextButton(
-                        onClick = vm::irParaDiaSeguinte,
-                        contentPadding = PaddingValues(horizontal = 8.dp),
-                    ) {
-                        Text("Seguinte →")
+                        TextButton(
+                            onClick = vm::irParaDiaAnterior,
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
+                            Text("← Anterior")
+                        }
+                        Text(
+                            text = rotuloData(dataSelecionada, hoje) + "  📅",
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = onAbrirCalendario != null) {
+                                    onAbrirCalendario?.invoke()
+                                }
+                                .padding(vertical = 8.dp),
+                        )
+                        TextButton(
+                            onClick = vm::irParaDiaSeguinte,
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                        ) {
+                            Text("Seguinte →")
+                        }
                     }
                 }
                 if (!ehHoje) {
-                    TextButton(onClick = vm::irParaHoje) { Text("Hoje") }
+                    item {
+                        TextButton(onClick = vm::irParaHoje) { Text("Hoje") }
+                    }
                 }
 
                 // Resumo do dia
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "Resumo do dia",
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
                             Text(
-                                text = resumoDoDia(concluidas, metas.size),
-                                style = MaterialTheme.typography.bodyLarge,
+                                text = "Resumo do dia",
+                                style = MaterialTheme.typography.titleSmall,
                             )
-                            if (folga) {
-                                Spacer(Modifier.width(8.dp))
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = MaterialTheme.shapes.small,
-                                ) {
-                                    Text(
-                                        text = "Folga",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                    )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = resumoDoDia(concluidas, metas.size),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                if (folga) {
+                                    Spacer(Modifier.width(8.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.secondaryContainer,
+                                        shape = MaterialTheme.shapes.small,
+                                    ) {
+                                        Text(
+                                            text = "Folga",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -151,111 +159,116 @@ fun TelaMetas(
                 }
 
                 // Treino do dia (segue o dia da semana da data selecionada)
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = "Treino do Dia",
-                            style = MaterialTheme.typography.titleSmall,
-                        )
-                        Text(
-                            text = treino?.titulo?.takeIf { it.isNotBlank() }
-                                ?: "Nenhum treino definido para hoje",
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                        val descricao = treino?.descricao.orEmpty()
-                        if (descricao.isNotBlank()) {
+                item {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
                             Text(
-                                text = descricao,
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = "Treino do Dia",
+                                style = MaterialTheme.typography.titleSmall,
                             )
-                        }
-                        if (registroTreino?.concluido == true) {
                             Text(
-                                text = "✅ Treino Concluído",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
+                                text = treino?.titulo?.takeIf { it.isNotBlank() }
+                                    ?: "Nenhum treino definido para hoje",
+                                style = MaterialTheme.typography.bodyLarge,
                             )
-                        }
-                        resumoExerciciosAnotados(exerciciosRegistro.size)?.let { resumo ->
-                            Text(text = resumo, style = MaterialTheme.typography.bodySmall)
-                        }
-                        resumoCardio(
-                            fezCardio = registroTreino?.fezCardio == true,
-                            tipo = registroTreino?.tipoCardio.orEmpty(),
-                            minutos = registroTreino?.cardioMinutos ?: 0,
-                        )?.let { resumo ->
-                            Text(text = resumo, style = MaterialTheme.typography.bodySmall)
-                        }
-                        if (onAnotarTreino != null) {
-                            Button(onClick = onAnotarTreino) {
-                                Text("Anotar Treino / Cargas")
+                            val descricao = treino?.descricao.orEmpty()
+                            if (descricao.isNotBlank()) {
+                                Text(
+                                    text = descricao,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
                             }
-                        }
-                        if (onEditarTreinos != null) {
-                            TextButton(onClick = onEditarTreinos) {
-                                Text("Editar Treinos da Semana")
+                            if (registroTreino?.concluido == true) {
+                                Text(
+                                    text = "✅ Treino Concluído",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            resumoExerciciosAnotados(exerciciosRegistro.size)?.let { resumo ->
+                                Text(text = resumo, style = MaterialTheme.typography.bodySmall)
+                            }
+                            resumoCardio(
+                                fezCardio = registroTreino?.fezCardio == true,
+                                tipo = registroTreino?.tipoCardio.orEmpty(),
+                                minutos = registroTreino?.cardioMinutos ?: 0,
+                            )?.let { resumo ->
+                                Text(text = resumo, style = MaterialTheme.typography.bodySmall)
+                            }
+                            if (onAnotarTreino != null) {
+                                Button(onClick = onAnotarTreino) {
+                                    Text("Anotar Treino / Cargas")
+                                }
+                            }
+                            if (onEditarTreinos != null) {
+                                TextButton(onClick = onEditarTreinos) {
+                                    Text("Editar Treinos da Semana")
+                                }
                             }
                         }
                     }
                 }
 
                 if (onEditarLembrete != null) {
-                    TextButton(onClick = onEditarLembrete) {
-                        Text("Lembrete: ${LocalTime.of(lembreteHora, lembreteMinuto)}")
+                    item {
+                        TextButton(onClick = onEditarLembrete) {
+                            Text("Lembrete: ${LocalTime.of(lembreteHora, lembreteMinuto)}")
+                        }
                     }
                 }
                 if (onTesteLembrete != null) {
-                    Button(onClick = onTesteLembrete) {
-                        Text("Testar lembrete (debug)")
+                    item {
+                        Button(onClick = onTesteLembrete) {
+                            Text("Testar lembrete (debug)")
+                        }
                     }
                 }
-                LazyColumn {
-                    items(metas, key = { it.id }) { meta ->
+
+                items(metas, key = { it.id }) { meta ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = meta.concluida == true,
+                                role = Role.Checkbox,
+                                onValueChange = { vm.alternar(meta.id) },
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // Checkbox passivo: o clique é do toggleable da linha (sem duplo disparo).
+                        Checkbox(checked = meta.concluida == true, onCheckedChange = null)
+                        Column {
+                            Text(text = meta.nome, style = MaterialTheme.typography.bodyLarge)
+                            if (meta.alvoTexto.isNotEmpty()) {
+                                Text(
+                                    text = "alvo: ${meta.alvoTexto}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                        }
+                    }
+                    submetasPorMeta[meta.id].orEmpty().forEach { sub ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .toggleable(
-                                    value = meta.concluida == true,
+                                    value = sub.concluida == true,
                                     role = Role.Checkbox,
-                                    onValueChange = { vm.alternar(meta.id) },
+                                    onValueChange = { vm.alternarSubmeta(sub.id) },
                                 )
-                                .padding(vertical = 4.dp),
+                                .padding(start = 28.dp)
+                                .padding(vertical = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // Checkbox passivo: o clique é do toggleable da linha (sem duplo disparo).
-                            Checkbox(checked = meta.concluida == true, onCheckedChange = null)
-                            Column {
-                                Text(text = meta.nome, style = MaterialTheme.typography.bodyLarge)
-                                if (meta.alvoTexto.isNotEmpty()) {
-                                    Text(
-                                        text = "alvo: ${meta.alvoTexto}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                    )
-                                }
-                            }
-                        }
-                        submetasPorMeta[meta.id].orEmpty().forEach { sub ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .toggleable(
-                                        value = sub.concluida == true,
-                                        role = Role.Checkbox,
-                                        onValueChange = { vm.alternarSubmeta(sub.id) },
-                                    )
-                                    .padding(start = 28.dp)
-                                    .padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Checkbox(checked = sub.concluida == true, onCheckedChange = null)
-                                Text(
-                                    text = sub.nome,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
+                            Checkbox(checked = sub.concluida == true, onCheckedChange = null)
+                            Text(
+                                text = sub.nome,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
                         }
                     }
                 }

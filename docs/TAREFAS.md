@@ -2,102 +2,71 @@
 
 Atualizado: 2026-11-03
 
-## Marco 4 — Tarefa 4.4: Interface do Diário de Treino Realizado (Cargas, Séries, Cardio e Alterações)
+## Ajuste Crítico de UI: Unificação da Rolagem da Tela Principal (`TelaMetas.kt`)
 
-OpenCode #2 (DEV), siga estas instruções passo a passo:
+OpenCode #2 (DEV), siga estas instruções:
 
-### 1. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
-Adicione as conexões reativas e ações:
+### Problema:
+Atualmente, `TelaMetas.kt` possui um `Column` fixo externo e um `LazyColumn` apenas para as metas diárias no final da tela. Isso faz com que a lista de metas role separada do restante da tela (gerando duas rolagens independentes e sensação esquisita).
+
+### Solução:
+Transformar a tela inteira em um **único `LazyColumn`** (ou `Column` com `verticalScroll(rememberScrollState())`), para que a página toda role de forma contínua e suave, de cima a baixo.
+
+### 1. Em `app/src/main/java/com/rotina/ui/TelaMetas.kt`:
+- Substituir o `Column` raiz por um único `LazyColumn` que engloba tudo:
 ```kotlin
-    val registroTreinoDoDia: StateFlow<RegistroTreinoDia?> = dataSelecionada
-        .flatMapLatest { dao.registroTreinoDoDia(it) }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
-
-    val exerciciosDoDia: StateFlow<List<ExercicioRegistro>> = dataSelecionada
-        .flatMapLatest { dao.exerciciosDoDia(it) }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
-
-    fun salvarRegistroTreino(
-        concluido: Boolean,
-        alteracoes: String,
-        fezCardio: Boolean,
-        tipoCardio: String,
-        cardioMinutos: Int
-    ) {
-        viewModelScope.launch {
-            dao.salvarRegistroTreino(
-                RegistroTreinoDia(
-                    data = dataSelecionada.value,
-                    concluido = concluido,
-                    alteracoesRotina = alteracoes,
-                    fezCardio = fezCardio,
-                    tipoCardio = tipoCardio,
-                    cardioMinutos = cardioMinutos
-                )
-            )
+LazyColumn(
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(24.dp),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+) {
+    item {
+        // Linha com título "Rotina", chip "Folga" e botão "Metas"
+    }
+    item {
+        // Barra de navegação de data (← Anterior / Data 📅 / Seguinte →)
+    }
+    if (!ehHoje) {
+        item {
+            // Botão "Hoje"
         }
     }
-
-    fun adicionarExercicio(nome: String, series: Int, reps: String, carga: String) {
-        viewModelScope.launch {
-            val proximaOrdem = (exerciciosDoDia.value.maxOfOrNull { it.ordem } ?: 0) + 1
-            dao.salvarExercicio(
-                ExercicioRegistro(
-                    data = dataSelecionada.value,
-                    nome = nome,
-                    series = series,
-                    repeticoes = reps,
-                    carga = carga,
-                    ordem = proximaOrdem
-                )
-            )
+    item {
+        // Card "Resumo do dia"
+    }
+    item {
+        // Card "Treino do Dia" (com botão de anotar treino e editar treinos)
+    }
+    if (onEditarLembrete != null) {
+        item {
+            // Botão "Lembrete: HH:mm"
         }
     }
-
-    fun apagarExercicio(id: Long) {
-        viewModelScope.launch {
-            dao.apagarExercicio(id)
+    if (onTesteLembrete != null) {
+        item {
+            // Botão "Testar lembrete (debug)"
         }
     }
+    items(metas, key = { it.id }) { meta ->
+        // Linha da Meta + Submetas
+    }
+}
 ```
 
-### 2. Criar a tela `app/src/main/java/com/rotina/ui/TelaRegistroTreino.kt`:
-- Título da tela com a data atual formatada.
-- Checkbox / Switch: "Treino do dia concluído".
-- Campo de texto (OutlinedTextField): "Alterações na rotina / Observações" (ex: "Treino foi mais curto por falta de tempo", etc.).
-- **Bloco de Cardio:**
-  - Checkbox: "Fez cardio hoje?"
-  - Se marcado, exibir campos: "Tipo de cardio" (ex: Esteira, Bicicleta, Caminhada) e "Duração em minutos" (numérico).
-- **Bloco de Exercícios Realizados:**
-  - Lista dos exercícios já salvos no dia com nome, séries, repetições, carga (ex: "Supino Reto — 4 séries • 10 reps • 30 kg") e botão para apagar.
-  - Botão ou diálogo "Adicionar Exercício" com os campos: Nome do exercício, Séries (número), Repetições (texto, ex: "10-10-8"), Carga/Peso (texto, ex: "25kg cada lado") e botão Adicionar.
-- Botão "Salvar e Voltar" (salva os campos gerais de registroTreino e chama `onVoltar`).
-
-### 3. Em `app/src/main/java/com/rotina/ui/TelaMetas.kt`:
-- No card "Treino do Dia":
-  - Se houver registro no dia, mostrar resumo amigável (ex: badge ou texto "✅ Treino Concluído" se `concluido == true`, "Exercícios: X anotados", "Cardio: 20 min (Esteira)").
-  - Adicionar botão com destaque: "Anotar Treino / Cargas" (`onAnotarTreino: () -> Unit`).
-
-### 4. Em `app/src/main/java/com/rotina/MainActivity.kt`:
-- Adicionar estado `modoRegistroTreino = remember { mutableStateOf(false) }`.
-- Gerenciar navegação: se `modoRegistroTreino == true`, exibir `TelaRegistroTreino`; caso contrário, exibir `TelaMetas`.
-
-### 5. Compilar e Testar:
+### 2. Compilar e Testar:
 Execute uma tarefa por vez:
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Instale e teste no celular real (TECNO KL4):
-- Tocar em "Anotar Treino / Cargas".
-- Marcar treino concluído, adicionar 1 exercício com séries, reps e carga.
-- Marcar cardio (20 min Esteira).
-- Salvar e voltar: verificar se o card na tela principal reflete os dados salvos.
+Instale e teste no celular TECNO KL4:
+- Verificar se a tela toda rola de uma só vez (cabeçalho, treino, resumo e metas rolando juntos como uma página única contínua).
 
-### 6. Commit:
+### 3. Commit:
 ```powershell
 git add -A
-git commit -m "feat: tela de registro de treino com series, cargas, cardio e alteracoes (tarefa 4.4)"
+git commit -m "fix: unifica rolagem da tela principal em LazyColumn unico (tela inteira rola junta)"
 ```
 
 Se houver erro, pare e mostre o erro completo.
