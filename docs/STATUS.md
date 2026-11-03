@@ -2,7 +2,7 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 4 concluído (Tarefas 4.1 e 4.2 entregues); Marco 3 concluído no celular
+## Estado atual: Fase 3 — Marco 4 concluído (Tarefas 4.1, 4.2 e 4.3 entregues); Marco 3 concluído no celular
 **Próxima ação:** revisão do maestro e definição das próximas tarefas (Marco 5).
 
 ## ✅ Versões fixadas (Tarefa 1)
@@ -72,6 +72,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 3.3 Seletor de data por calendário | ✅ (DatePickerDialog nativo ao tocar na data; abre no dia selecionado — verificado no celular) |
 | Marco 4.1 Dados do treino da semana (Room + migration 2→3) | ✅ (`TreinoSemana`, DAO e migration; `user_version=3` e tabela conferidos no celular, 7 metas preservadas) |
 | Marco 4.2 Treino do dia + edição semanal | ✅ (card na tela principal + editor dos 7 dias; salvou Terça no celular e o card atualizou na hora; DB confirmou a linha) |
+| Marco 4.3 Diário do treino realizado (Room + migration 3→4) | ✅ (`RegistroTreinoDia`/`ExercicioRegistro`, DAO e migration; `user_version=4`, schemas/índice e dados preservados conferidos no celular) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
@@ -91,6 +92,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 3.3: data no topo é clicável e abre `DatePickerDialog` nativo iniciando em `dataSelecionada`; callback grava `LocalDate.of(ano, mes+1, dia).toEpochDay()` via `selecionarData()`. Verificado no celular: mês anterior → 15/10/2026, botão "Hoje" → 03/11/2026
 - 4.1: entidade `TreinoSemana` com PK natural (`diaSemana` 1–7) e `@Upsert`; migration `MIGRACAO_2_3` cria `treinos_semana` (sem FK, sem seed). Nome do arquivo real é `RotinaDb.kt` (a tarefa citava `RotinaDatabase.kt`). Verificado no celular: `user_version=3`, tabela com schema esperado, `room_master_table` atualizado e 7 metas preservadas
 - 4.2: card "Treino do Dia" segue o dia da semana de `dataSelecionada`; editor dos 7 dias com título/descrição e "Salvar" individual. Erro de compilação pego e corrigido: `items(1..7)` caía na sobrecarga `count: Int` → `items((1..7).toList())`. Verificado no celular: salvar Terça atualizou o card na hora; DB com `(2, 'Peito e Triceps', 'Supino, crucifixo e Triceps corda')`; navegar para segunda mostrou "Nenhum treino..." e voltar para hoje restaurou o treino
+- 4.3: `RegistroTreinoDia` (PK natural `data`) e `ExercicioRegistro` (PK autoGenerate + índice em `data`); DAO com flows `registroTreinoDoDia`/`exerciciosDoDia`, `@Upsert` e `apagarExercicio(id)`; migration `MIGRACAO_3_4` no companion (padrão das anteriores) e `version=4`. Sem teste JVM novo (schema/DAO gerados pelo Room; validação por compilação + migration real, mesmo padrão da 4.1). Verificado no celular: `user_version=4`, `PRAGMA integrity_check=ok`, schemas exatos, índice `index_exercicios_registro_data`, 7 metas e treino da Terça preservados, `room_master_table` atualizado e app abriu sem crash
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00

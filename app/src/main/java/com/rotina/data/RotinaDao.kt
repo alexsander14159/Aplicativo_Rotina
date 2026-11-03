@@ -151,4 +151,21 @@ interface RotinaDao {
 
     @Upsert
     suspend fun salvarTreino(treino: TreinoSemana)
+
+    // ---- registro do treino realizado no dia ----
+
+    @Query("SELECT * FROM registro_treino_dia WHERE data = :data")
+    fun registroTreinoDoDia(data: Long): Flow<RegistroTreinoDia?>
+
+    @Query("SELECT * FROM exercicios_registro WHERE data = :data ORDER BY ordem ASC, id ASC")
+    fun exerciciosDoDia(data: Long): Flow<List<ExercicioRegistro>>
+
+    @Upsert
+    suspend fun salvarRegistroTreino(registro: RegistroTreinoDia)
+
+    @Upsert
+    suspend fun salvarExercicio(exercicio: ExercicioRegistro)
+
+    @Query("DELETE FROM exercicios_registro WHERE id = :id")
+    suspend fun apagarExercicio(id: Long)
 }

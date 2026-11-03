@@ -8,8 +8,17 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Meta::class, ChecklistDia::class, Submeta::class, SubmetaDia::class, Dia::class, TreinoSemana::class],
-    version = 3,
+    entities = [
+        Meta::class,
+        ChecklistDia::class,
+        Submeta::class,
+        SubmetaDia::class,
+        Dia::class,
+        TreinoSemana::class,
+        RegistroTreinoDia::class,
+        ExercicioRegistro::class,
+    ],
+    version = 4,
     exportSchema = false,
 )
 abstract class RotinaDb : RoomDatabase() {
@@ -27,7 +36,7 @@ abstract class RotinaDb : RoomDatabase() {
         private fun build(context: Context): RotinaDb =
             Room.databaseBuilder(context, RotinaDb::class.java, "rotina.db")
                 .addCallback(MetasSeed)
-                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3)
+                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4)
                 .build()
 
         /** v1 → v2: alvo do dia nas metas + tabelas de submetas e folga. Dados preservados. */
@@ -71,6 +80,36 @@ abstract class RotinaDb : RoomDatabase() {
                         "`titulo` TEXT NOT NULL, " +
                         "`descricao` TEXT NOT NULL, " +
                         "PRIMARY KEY(`diaSemana`))",
+                )
+            }
+        }
+
+        /** v3 → v4: diário do treino realizado (exercícios, cargas, séries e cardio). Dados preservados. */
+        private val MIGRACAO_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `registro_treino_dia` (" +
+                        "`data` INTEGER NOT NULL, " +
+                        "`concluido` INTEGER NOT NULL, " +
+                        "`alteracoesRotina` TEXT NOT NULL, " +
+                        "`fezCardio` INTEGER NOT NULL, " +
+                        "`tipoCardio` TEXT NOT NULL, " +
+                        "`cardioMinutos` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`data`))",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `exercicios_registro` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`data` INTEGER NOT NULL, " +
+                        "`nome` TEXT NOT NULL, " +
+                        "`series` INTEGER NOT NULL, " +
+                        "`repeticoes` TEXT NOT NULL, " +
+                        "`carga` TEXT NOT NULL, " +
+                        "`ordem` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_exercicios_registro_data` " +
+                        "ON `exercicios_registro` (`data`)",
                 )
             }
         }

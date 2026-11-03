@@ -2,62 +2,111 @@
 
 Atualizado: 2026-11-03
 
-## Marco 4 — Tarefa 4.2: Exibição e Edição dos Treinos da Semana
+## Marco 4 — Tarefa 4.3: Modelagem e Persistência do Diário de Treino Realizado
 
 OpenCode #2 (DEV), siga estas instruções passo a passo:
 
-### 1. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
-- Adicionar o fluxo reativo do treino do dia correspondente à `dataSelecionada`:
+### 1. Criar `app/src/main/java/com/rotina/data/RegistroTreino.kt`:
 ```kotlin
-    val treinoDoDia: StateFlow<TreinoSemana?> = dataSelecionada
-        .flatMapLatest { epoch ->
-            val diaSemana = LocalDate.ofEpochDay(epoch).dayOfWeek.value // 1 (Segunda) a 7 (Domingo)
-            dao.treinoDoDia(diaSemana)
-        }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+package com.rotina.data
 
-    val todosTreinos: StateFlow<List<TreinoSemana>> = dao.todosTreinos()
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+import androidx.room.Entity
+import androidx.room.Index
+import androidx.room.PrimaryKey
 
-    fun salvarTreino(diaSemana: Int, titulo: String, descricao: String) {
-        viewModelScope.launch {
-            dao.salvarTreino(TreinoSemana(diaSemana = diaSemana, titulo = titulo, descricao = descricao))
-        }
-    }
+@Entity(tableName = "registro_treino_dia")
+data class RegistroTreinoDia(
+    @PrimaryKey val data: Long,
+    val concluido: Boolean = false,
+    val alteracoesRotina: String = "",
+    val fezCardio: Boolean = false,
+    val tipoCardio: String = "",
+    val cardioMinutos: Int = 0
+)
+
+@Entity(
+    tableName = "exercicios_registro",
+    indices = [Index(value = ["data"])]
+)
+data class ExercicioRegistro(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val data: Long,
+    val nome: String,
+    val series: Int,
+    val repeticoes: String,
+    val carga: String,
+    val ordem: Int = 0
+)
 ```
 
-### 2. Criar a tela/diálogo de edição dos treinos da semana `app/src/main/java/com/rotina/ui/TelaTreinosEdit.kt`:
-- Apresentar os 7 dias da semana (Segunda-feira, Terça-feira, Quarta-feira, Quinta-feira, Sexta-feira, Sábado, Domingo).
-- Para cada dia:
-  - Exibir o dia da semana.
-  - Campos editáveis para `titulo` (ex: "Peito e Tríceps", "Descanso") e `descricao` (exercícios ou notas).
-  - Botão "Salvar" que chama `onSalvar(diaSemana, titulo, descricao)`.
-- Botão no topo para "Voltar" (`onVoltar: () -> Unit`).
+### 2. No `app/src/main/java/com/rotina/data/RotinaDao.kt`, adicionar:
+```kotlin
+    @Query("SELECT * FROM registro_treino_dia WHERE data = :data")
+    fun registroTreinoDoDia(data: Long): Flow<RegistroTreinoDia?>
 
-### 3. Em `app/src/main/java/com/rotina/ui/TelaMetas.kt`:
-- Adicionar o card "Treino do Dia" (acima ou abaixo do resumo de metas):
-  - Exibe o título do treino do dia da semana atual (ou "Nenhum treino definido para hoje / Descanso" se null ou vazio).
-  - Se houver descrição, exibe a descrição formatada.
-  - Botão "Editar Treinos da Semana" que chama o callback `onEditarTreinos: () -> Unit`.
+    @Query("SELECT * FROM exercicios_registro WHERE data = :data ORDER BY ordem ASC, id ASC")
+    fun exerciciosDoDia(data: Long): Flow<List<ExercicioRegistro>>
 
-### 4. Em `app/src/main/java/com/rotina/MainActivity.kt`:
-- Integrar a navegação de estado: se estiver no modo de edição de treinos (`modoTreinosEdit`), exibir `TelaTreinosEdit`; caso contrário, exibir `TelaMetas`.
+    @Upsert
+    suspend fun salvarRegistroTreino(registro: RegistroTreinoDia)
 
-### 5. Compilar e Testar:
+    @Upsert
+    suspend fun salvarExercicio(exercicio: ExercicioRegistro)
+
+    @Query("DELETE FROM exercicios_registro WHERE id = :id")
+    suspend fun apagarExercicio(id: Long)
+```
+
+### 3. No `app/src/main/java/com/rotina/data/RotinaDb.kt`:
+- Aumentar `version = 4` e incluir `RegistroTreinoDia::class` e `ExercicioRegistro::class` nas entities do `@Database`.
+- Criar a migração `MIGRACAO_3_4`:
+```kotlin
+val MIGRACAO_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `registro_treino_dia` (
+                `data` INTEGER NOT NULL,
+                `concluido` INTEGER NOT NULL,
+                `alteracoesRotina` TEXT NOT NULL,
+                `fezCardio` INTEGER NOT NULL,
+                `tipoCardio` TEXT NOT NULL,
+                `cardioMinutos` INTEGER NOT NULL,
+                PRIMARY KEY(`data`)
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `exercicios_registro` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `data` INTEGER NOT NULL,
+                `nome` TEXT NOT NULL,
+                `series` INTEGER NOT NULL,
+                `repeticoes` TEXT NOT NULL,
+                `carga` TEXT NOT NULL,
+                `ordem` INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_exercicios_registro_data` ON `exercicios_registro` (`data`)")
+    }
+}
+```
+- Registrar `.addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4)` no construtor do banco.
+
+### 4. Compilar e Testar:
 Execute uma tarefa por vez:
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Instale e teste no celular real (TECNO KL4):
-- Verificar se o card aparece na tela principal.
-- Tocar em "Editar Treinos", cadastrar um treino para o dia de hoje (ex: Terça-feira).
-- Voltar e conferir se o card atualizou imediatamente.
+Validar no aparelho real (TECNO KL4).
 
-### 6. Commit:
+### 5. Commit:
 ```powershell
 git add -A
-git commit -m "feat: exibicao do treino do dia e tela de edicao semanal (tarefa 4.2)"
+git commit -m "feat: persistencia de registro de treino do dia, exercicios com carga/series e cardio (tarefa 4.3)"
 ```
 
 Se houver erro, pare e mostre o erro completo.
