@@ -2,14 +2,18 @@ package com.rotina.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
 import java.time.LocalTime
@@ -39,9 +44,12 @@ fun TelaMetas(
     val metas by vm.metas.collectAsState()
     val submetas by vm.submetas.collectAsState()
     val dia by vm.dia.collectAsState()
-    val rotuloData = LocalDate.ofEpochDay(vm.dataDeHoje).toString()
+    val dataSelecionada by vm.dataSelecionada.collectAsState()
+    val hoje = LocalDate.now().toEpochDay()
+    val ehHoje = dataSelecionada == hoje
     val folga = dia?.folga == true
     val submetasPorMeta = remember(submetas) { submetas.groupBy { it.metaId } }
+    val concluidas = metas.count { it.concluida == true }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -63,16 +71,73 @@ fun TelaMetas(
                     FilterChip(
                         selected = folga,
                         onClick = { vm.alternarFolga() },
-                        label = { Text("Hoje é folga") },
+                        label = { Text(if (ehHoje) "Hoje é folga" else "Folga") },
                     )
                     if (onEditarMetas != null) {
                         TextButton(onClick = onEditarMetas) { Text("Metas") }
                     }
                 }
-                Text(
-                    text = "Metas de hoje — $rotuloData" + if (folga) " · folga 😌" else "",
-                    style = MaterialTheme.typography.titleMedium,
-                )
+
+                // Navegação por data
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = vm::irParaDiaAnterior,
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text("← Anterior")
+                    }
+                    Text(
+                        text = rotuloData(dataSelecionada, hoje),
+                        style = MaterialTheme.typography.titleMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = vm::irParaDiaSeguinte,
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                    ) {
+                        Text("Seguinte →")
+                    }
+                }
+                if (!ehHoje) {
+                    TextButton(onClick = vm::irParaHoje) { Text("Hoje") }
+                }
+
+                // Resumo do dia
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "Resumo do dia",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = resumoDoDia(concluidas, metas.size),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                            if (folga) {
+                                Spacer(Modifier.width(8.dp))
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = MaterialTheme.shapes.small,
+                                ) {
+                                    Text(
+                                        text = "Folga",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (onEditarLembrete != null) {
                     TextButton(onClick = onEditarLembrete) {
                         Text("Lembrete: ${LocalTime.of(lembreteHora, lembreteMinuto)}")

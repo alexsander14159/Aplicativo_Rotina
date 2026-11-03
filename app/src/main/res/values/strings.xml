@@ -5,4 +5,8 @@
     <string name="lembrete_texto">Hora de registrar as metas de hoje!</string>
     <string name="canal_lembretes">Lembretes</string>
     <string name="folga_dia">Hoje e folga</string>
+    <string name="dia_anterior">Anterior</string>
+    <string name="dia_seguinte">Seguinte</string>
+    <string name="hoje">Hoje</string>
+    <string name="resumo_concluidas">%1 de %2 metas concluídas</string>
 </resources>

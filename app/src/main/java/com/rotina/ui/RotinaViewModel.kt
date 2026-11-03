@@ -12,25 +12,32 @@ import com.rotina.data.RotinaDao
 import com.rotina.data.Submeta
 import com.rotina.data.SubmetaDia
 import java.time.LocalDate
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
-    /** Data do aparelho na criação do ViewModel (uma jornada = um objeto do VM). */
-    val dataDeHoje: Long = LocalDate.now().toEpochDay()
+    /** Data selecionada na navegação; base única para metas, submetas e folga. */
+    val dataSelecionada = MutableStateFlow(LocalDate.now().toEpochDay())
 
-    val metas: StateFlow<List<EstadoMeta>> = dao.checklistDoDia(dataDeHoje)
+    val metas: StateFlow<List<EstadoMeta>> = dataSelecionada
+        .flatMapLatest { data -> dao.checklistDoDia(data) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-    val submetas: StateFlow<List<EstadoSubmeta>> = dao.submetasDoDia(dataDeHoje)
+    val submetas: StateFlow<List<EstadoSubmeta>> = dataSelecionada
+        .flatMapLatest { data -> dao.submetasDoDia(data) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-    val dia: StateFlow<Dia?> = dao.diaCarregar(dataDeHoje)
+    val dia: StateFlow<Dia?> = dataSelecionada
+        .flatMapLatest { data -> dao.diaCarregar(data) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
     // Configuração (CRUD): lista completa de metas e submetas, sem estado do dia.
@@ -48,14 +55,15 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
      * único via UPDATE por PRIMARY KEY; item novo usa id=0 (auto). [Ruling Marco 1]
      */
     fun alternar(metaId: Long) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
-                val atual = dao.obter(dataDeHoje, metaId)
+                val atual = dao.obter(data, metaId)
                 val novo = if (atual != null) {
                     atual.copy(concluida = proximoEstado(atual.concluida))
                 } else {
                     ChecklistDia(
-                        data = dataDeHoje,
+                        data = data,
                         metaId = metaId,
                         concluida = proximoEstado(null),
                     )
@@ -67,14 +75,15 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     /** Alterna a submeta no dia, mesmo padrão da meta (Mutex + copy do id real). */
     fun alternarSubmeta(submetaId: Long) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
-                val atual = dao.submetaObter(dataDeHoje, submetaId)
+                val atual = dao.submetaObter(data, submetaId)
                 val novo = if (atual != null) {
                     atual.copy(concluida = proximoEstado(atual.concluida))
                 } else {
                     SubmetaDia(
-                        data = dataDeHoje,
+                        data = data,
                         submetaId = submetaId,
                         concluida = proximoEstado(null),
                     )
@@ -86,16 +95,31 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     /** Ligar/desligar a folga do dia (feriado, cochilo, dia esquisito). */
     fun alternarFolga() {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
-                val atual = dao.diaObter(dataDeHoje)
+                val atual = dao.diaObter(data)
                 val novo = Dia(
-                    data = dataDeHoje,
+                    data = data,
                     folga = proximoEstado(atual?.folga),
                 )
                 dao.diaSalvar(novo)
             }
         }
+    }
+
+    // ---- Navegação por data ----
+
+    fun irParaDiaAnterior() {
+        dataSelecionada.value -= 1
+    }
+
+    fun irParaDiaSeguinte() {
+        dataSelecionada.value += 1
+    }
+
+    fun irParaHoje() {
+        dataSelecionada.value = LocalDate.now().toEpochDay()
     }
 
     // ---- CRUD da rotina (configuração) ----
