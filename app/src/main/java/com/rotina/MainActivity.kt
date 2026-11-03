@@ -1,6 +1,7 @@
 package com.rotina
 
 import android.Manifest
+import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -12,6 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import com.rotina.data.RotinaDb
+import com.rotina.notif.obterHorario
+import com.rotina.notif.salvarEReagendar
 import com.rotina.ui.RotinaViewModel
 import com.rotina.ui.RotinaViewModelFactory
 import com.rotina.ui.TelaMetas
@@ -29,8 +32,11 @@ class MainActivity : ComponentActivity() {
             this,
             RotinaViewModelFactory(RotinaDb.get(applicationContext).rotinaDao()),
         )[RotinaViewModel::class.java]
+        val (horaInicial, minutoInicial) = obterHorario(applicationContext)
         setContent {
             val telaEdicao = rememberSaveable { mutableStateOf(false) }
+            val horaLembrete = rememberSaveable { mutableStateOf(horaInicial) }
+            val minutoLembrete = rememberSaveable { mutableStateOf(minutoInicial) }
             if (telaEdicao.value) {
                 TelaMetasEdit(
                     vm = vm,
@@ -39,6 +45,21 @@ class MainActivity : ComponentActivity() {
             } else {
                 TelaMetas(
                     vm = vm,
+                    lembreteHora = horaLembrete.value,
+                    lembreteMinuto = minutoLembrete.value,
+                    onEditarLembrete = {
+                        TimePickerDialog(
+                            this@MainActivity,
+                            { _, h, m ->
+                                horaLembrete.value = h
+                                minutoLembrete.value = m
+                                salvarEReagendar(applicationContext, h, m)
+                            },
+                            horaLembrete.value,
+                            minutoLembrete.value,
+                            true,
+                        ).show()
+                    },
                     onTesteLembrete = if (BuildConfig.DEBUG) {
                         { com.rotina.notif.mostrar(this) }
                     } else {

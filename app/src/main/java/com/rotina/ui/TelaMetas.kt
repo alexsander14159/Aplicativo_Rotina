@@ -25,10 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import java.time.LocalDate
+import java.time.LocalTime
 
 @Composable
 fun TelaMetas(
     vm: RotinaViewModel,
+    lembreteHora: Int = 20,
+    lembreteMinuto: Int = 0,
+    onEditarLembrete: (() -> Unit)? = null,
     onTesteLembrete: (() -> Unit)? = null,
     onEditarMetas: (() -> Unit)? = null,
 ) {
@@ -69,6 +73,11 @@ fun TelaMetas(
                     text = "Metas de hoje — $rotuloData" + if (folga) " · folga 😌" else "",
                     style = MaterialTheme.typography.titleMedium,
                 )
+                if (onEditarLembrete != null) {
+                    TextButton(onClick = onEditarLembrete) {
+                        Text("Lembrete: ${LocalTime.of(lembreteHora, lembreteMinuto)}")
+                    }
+                }
                 if (onTesteLembrete != null) {
                     Button(onClick = onTesteLembrete) {
                         Text("Testar lembrete (debug)")

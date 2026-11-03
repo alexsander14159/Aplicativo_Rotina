@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rotina</string>
+    <string name="lembrete_titulo">Rotina</string>
+    <string name="lembrete_texto">Hora de registrar as metas de hoje!</string>
+    <string name="canal_lembretes">Lembretes</string>
+    <string name="folga_dia">Hoje e folga</string>
+</resources>
