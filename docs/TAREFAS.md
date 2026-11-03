@@ -2,111 +2,102 @@
 
 Atualizado: 2026-11-03
 
-## Marco 4 — Tarefa 4.3: Modelagem e Persistência do Diário de Treino Realizado
+## Marco 4 — Tarefa 4.4: Interface do Diário de Treino Realizado (Cargas, Séries, Cardio e Alterações)
 
 OpenCode #2 (DEV), siga estas instruções passo a passo:
 
-### 1. Criar `app/src/main/java/com/rotina/data/RegistroTreino.kt`:
+### 1. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
+Adicione as conexões reativas e ações:
 ```kotlin
-package com.rotina.data
+    val registroTreinoDoDia: StateFlow<RegistroTreinoDia?> = dataSelecionada
+        .flatMapLatest { dao.registroTreinoDoDia(it) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
-import androidx.room.Entity
-import androidx.room.Index
-import androidx.room.PrimaryKey
+    val exerciciosDoDia: StateFlow<List<ExercicioRegistro>> = dataSelecionada
+        .flatMapLatest { dao.exerciciosDoDia(it) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-@Entity(tableName = "registro_treino_dia")
-data class RegistroTreinoDia(
-    @PrimaryKey val data: Long,
-    val concluido: Boolean = false,
-    val alteracoesRotina: String = "",
-    val fezCardio: Boolean = false,
-    val tipoCardio: String = "",
-    val cardioMinutos: Int = 0
-)
-
-@Entity(
-    tableName = "exercicios_registro",
-    indices = [Index(value = ["data"])]
-)
-data class ExercicioRegistro(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val data: Long,
-    val nome: String,
-    val series: Int,
-    val repeticoes: String,
-    val carga: String,
-    val ordem: Int = 0
-)
-```
-
-### 2. No `app/src/main/java/com/rotina/data/RotinaDao.kt`, adicionar:
-```kotlin
-    @Query("SELECT * FROM registro_treino_dia WHERE data = :data")
-    fun registroTreinoDoDia(data: Long): Flow<RegistroTreinoDia?>
-
-    @Query("SELECT * FROM exercicios_registro WHERE data = :data ORDER BY ordem ASC, id ASC")
-    fun exerciciosDoDia(data: Long): Flow<List<ExercicioRegistro>>
-
-    @Upsert
-    suspend fun salvarRegistroTreino(registro: RegistroTreinoDia)
-
-    @Upsert
-    suspend fun salvarExercicio(exercicio: ExercicioRegistro)
-
-    @Query("DELETE FROM exercicios_registro WHERE id = :id")
-    suspend fun apagarExercicio(id: Long)
-```
-
-### 3. No `app/src/main/java/com/rotina/data/RotinaDb.kt`:
-- Aumentar `version = 4` e incluir `RegistroTreinoDia::class` e `ExercicioRegistro::class` nas entities do `@Database`.
-- Criar a migração `MIGRACAO_3_4`:
-```kotlin
-val MIGRACAO_3_4 = object : Migration(3, 4) {
-    override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `registro_treino_dia` (
-                `data` INTEGER NOT NULL,
-                `concluido` INTEGER NOT NULL,
-                `alteracoesRotina` TEXT NOT NULL,
-                `fezCardio` INTEGER NOT NULL,
-                `tipoCardio` TEXT NOT NULL,
-                `cardioMinutos` INTEGER NOT NULL,
-                PRIMARY KEY(`data`)
+    fun salvarRegistroTreino(
+        concluido: Boolean,
+        alteracoes: String,
+        fezCardio: Boolean,
+        tipoCardio: String,
+        cardioMinutos: Int
+    ) {
+        viewModelScope.launch {
+            dao.salvarRegistroTreino(
+                RegistroTreinoDia(
+                    data = dataSelecionada.value,
+                    concluido = concluido,
+                    alteracoesRotina = alteracoes,
+                    fezCardio = fezCardio,
+                    tipoCardio = tipoCardio,
+                    cardioMinutos = cardioMinutos
+                )
             )
-            """.trimIndent()
-        )
-        db.execSQL(
-            """
-            CREATE TABLE IF NOT EXISTS `exercicios_registro` (
-                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                `data` INTEGER NOT NULL,
-                `nome` TEXT NOT NULL,
-                `series` INTEGER NOT NULL,
-                `repeticoes` TEXT NOT NULL,
-                `carga` TEXT NOT NULL,
-                `ordem` INTEGER NOT NULL
-            )
-            """.trimIndent()
-        )
-        db.execSQL("CREATE INDEX IF NOT EXISTS `index_exercicios_registro_data` ON `exercicios_registro` (`data`)")
+        }
     }
-}
-```
-- Registrar `.addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4)` no construtor do banco.
 
-### 4. Compilar e Testar:
+    fun adicionarExercicio(nome: String, series: Int, reps: String, carga: String) {
+        viewModelScope.launch {
+            val proximaOrdem = (exerciciosDoDia.value.maxOfOrNull { it.ordem } ?: 0) + 1
+            dao.salvarExercicio(
+                ExercicioRegistro(
+                    data = dataSelecionada.value,
+                    nome = nome,
+                    series = series,
+                    repeticoes = reps,
+                    carga = carga,
+                    ordem = proximaOrdem
+                )
+            )
+        }
+    }
+
+    fun apagarExercicio(id: Long) {
+        viewModelScope.launch {
+            dao.apagarExercicio(id)
+        }
+    }
+```
+
+### 2. Criar a tela `app/src/main/java/com/rotina/ui/TelaRegistroTreino.kt`:
+- Título da tela com a data atual formatada.
+- Checkbox / Switch: "Treino do dia concluído".
+- Campo de texto (OutlinedTextField): "Alterações na rotina / Observações" (ex: "Treino foi mais curto por falta de tempo", etc.).
+- **Bloco de Cardio:**
+  - Checkbox: "Fez cardio hoje?"
+  - Se marcado, exibir campos: "Tipo de cardio" (ex: Esteira, Bicicleta, Caminhada) e "Duração em minutos" (numérico).
+- **Bloco de Exercícios Realizados:**
+  - Lista dos exercícios já salvos no dia com nome, séries, repetições, carga (ex: "Supino Reto — 4 séries • 10 reps • 30 kg") e botão para apagar.
+  - Botão ou diálogo "Adicionar Exercício" com os campos: Nome do exercício, Séries (número), Repetições (texto, ex: "10-10-8"), Carga/Peso (texto, ex: "25kg cada lado") e botão Adicionar.
+- Botão "Salvar e Voltar" (salva os campos gerais de registroTreino e chama `onVoltar`).
+
+### 3. Em `app/src/main/java/com/rotina/ui/TelaMetas.kt`:
+- No card "Treino do Dia":
+  - Se houver registro no dia, mostrar resumo amigável (ex: badge ou texto "✅ Treino Concluído" se `concluido == true`, "Exercícios: X anotados", "Cardio: 20 min (Esteira)").
+  - Adicionar botão com destaque: "Anotar Treino / Cargas" (`onAnotarTreino: () -> Unit`).
+
+### 4. Em `app/src/main/java/com/rotina/MainActivity.kt`:
+- Adicionar estado `modoRegistroTreino = remember { mutableStateOf(false) }`.
+- Gerenciar navegação: se `modoRegistroTreino == true`, exibir `TelaRegistroTreino`; caso contrário, exibir `TelaMetas`.
+
+### 5. Compilar e Testar:
 Execute uma tarefa por vez:
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Validar no aparelho real (TECNO KL4).
+Instale e teste no celular real (TECNO KL4):
+- Tocar em "Anotar Treino / Cargas".
+- Marcar treino concluído, adicionar 1 exercício com séries, reps e carga.
+- Marcar cardio (20 min Esteira).
+- Salvar e voltar: verificar se o card na tela principal reflete os dados salvos.
 
-### 5. Commit:
+### 6. Commit:
 ```powershell
 git add -A
-git commit -m "feat: persistencia de registro de treino do dia, exercicios com carga/series e cardio (tarefa 4.3)"
+git commit -m "feat: tela de registro de treino com series, cargas, cardio e alteracoes (tarefa 4.4)"
 ```
 
 Se houver erro, pare e mostre o erro completo.

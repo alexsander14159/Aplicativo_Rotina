@@ -7,7 +7,9 @@ import com.rotina.data.ChecklistDia
 import com.rotina.data.Dia
 import com.rotina.data.EstadoMeta
 import com.rotina.data.EstadoSubmeta
+import com.rotina.data.ExercicioRegistro
 import com.rotina.data.Meta
+import com.rotina.data.RegistroTreinoDia
 import com.rotina.data.RotinaDao
 import com.rotina.data.Submeta
 import com.rotina.data.SubmetaDia
@@ -50,6 +52,15 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
     val todosTreinos: StateFlow<List<TreinoSemana>> = dao.todosTreinos()
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    /** Registro do treino realizado na data selecionada (cargas, cardio e alterações). */
+    val registroTreinoDoDia: StateFlow<RegistroTreinoDia?> = dataSelecionada
+        .flatMapLatest { dao.registroTreinoDoDia(it) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val exerciciosDoDia: StateFlow<List<ExercicioRegistro>> = dataSelecionada
+        .flatMapLatest { dao.exerciciosDoDia(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
     // Configuração (CRUD): lista completa de metas e submetas, sem estado do dia.
@@ -143,6 +154,51 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
     fun salvarTreino(diaSemana: Int, titulo: String, descricao: String) {
         viewModelScope.launch {
             dao.salvarTreino(TreinoSemana(diaSemana = diaSemana, titulo = titulo, descricao = descricao))
+        }
+    }
+
+    // ---- diário do treino realizado ----
+
+    fun salvarRegistroTreino(
+        concluido: Boolean,
+        alteracoes: String,
+        fezCardio: Boolean,
+        tipoCardio: String,
+        cardioMinutos: Int,
+    ) {
+        viewModelScope.launch {
+            dao.salvarRegistroTreino(
+                RegistroTreinoDia(
+                    data = dataSelecionada.value,
+                    concluido = concluido,
+                    alteracoesRotina = alteracoes,
+                    fezCardio = fezCardio,
+                    tipoCardio = tipoCardio,
+                    cardioMinutos = cardioMinutos,
+                ),
+            )
+        }
+    }
+
+    fun adicionarExercicio(nome: String, series: Int, reps: String, carga: String) {
+        viewModelScope.launch {
+            val proximaOrdem = (exerciciosDoDia.value.maxOfOrNull { it.ordem } ?: 0) + 1
+            dao.salvarExercicio(
+                ExercicioRegistro(
+                    data = dataSelecionada.value,
+                    nome = nome,
+                    series = series,
+                    repeticoes = reps,
+                    carga = carga,
+                    ordem = proximaOrdem,
+                ),
+            )
+        }
+    }
+
+    fun apagarExercicio(id: Long) {
+        viewModelScope.launch {
+            dao.apagarExercicio(id)
         }
     }
 

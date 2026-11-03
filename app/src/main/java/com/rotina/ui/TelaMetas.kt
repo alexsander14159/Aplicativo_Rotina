@@ -43,11 +43,14 @@ fun TelaMetas(
     onTesteLembrete: (() -> Unit)? = null,
     onEditarMetas: (() -> Unit)? = null,
     onEditarTreinos: (() -> Unit)? = null,
+    onAnotarTreino: (() -> Unit)? = null,
 ) {
     val metas by vm.metas.collectAsState()
     val submetas by vm.submetas.collectAsState()
     val dia by vm.dia.collectAsState()
     val treino by vm.treinoDoDia.collectAsState()
+    val registroTreino by vm.registroTreinoDoDia.collectAsState()
+    val exerciciosRegistro by vm.exerciciosDoDia.collectAsState()
     val dataSelecionada by vm.dataSelecionada.collectAsState()
     val hoje = LocalDate.now().toEpochDay()
     val ehHoje = dataSelecionada == hoje
@@ -168,6 +171,28 @@ fun TelaMetas(
                                 text = descricao,
                                 style = MaterialTheme.typography.bodyMedium,
                             )
+                        }
+                        if (registroTreino?.concluido == true) {
+                            Text(
+                                text = "✅ Treino Concluído",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        resumoExerciciosAnotados(exerciciosRegistro.size)?.let { resumo ->
+                            Text(text = resumo, style = MaterialTheme.typography.bodySmall)
+                        }
+                        resumoCardio(
+                            fezCardio = registroTreino?.fezCardio == true,
+                            tipo = registroTreino?.tipoCardio.orEmpty(),
+                            minutos = registroTreino?.cardioMinutos ?: 0,
+                        )?.let { resumo ->
+                            Text(text = resumo, style = MaterialTheme.typography.bodySmall)
+                        }
+                        if (onAnotarTreino != null) {
+                            Button(onClick = onAnotarTreino) {
+                                Text("Anotar Treino / Cargas")
+                            }
                         }
                         if (onEditarTreinos != null) {
                             TextButton(onClick = onEditarTreinos) {

@@ -2,7 +2,7 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 4 concluído (Tarefas 4.1, 4.2 e 4.3 entregues); Marco 3 concluído no celular
+## Estado atual: Fase 3 — Marco 4 concluído (Tarefas 4.1 a 4.4 entregues); Marco 3 concluído no celular
 **Próxima ação:** revisão do maestro e definição das próximas tarefas (Marco 5).
 
 ## ✅ Versões fixadas (Tarefa 1)
@@ -73,6 +73,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 4.1 Dados do treino da semana (Room + migration 2→3) | ✅ (`TreinoSemana`, DAO e migration; `user_version=3` e tabela conferidos no celular, 7 metas preservadas) |
 | Marco 4.2 Treino do dia + edição semanal | ✅ (card na tela principal + editor dos 7 dias; salvou Terça no celular e o card atualizou na hora; DB confirmou a linha) |
 | Marco 4.3 Diário do treino realizado (Room + migration 3→4) | ✅ (`RegistroTreinoDia`/`ExercicioRegistro`, DAO e migration; `user_version=4`, schemas/índice e dados preservados conferidos no celular) |
+| Marco 4.4 Interface do diário de treino (registro, exercícios, cardio) | ✅ (TDD 8/8; tela com concluído/observações/cardio/exercícios; card com badge/contagem/cardio; salvar, reabrir, apagar e cold start verificados no celular) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
@@ -93,6 +94,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 4.1: entidade `TreinoSemana` com PK natural (`diaSemana` 1–7) e `@Upsert`; migration `MIGRACAO_2_3` cria `treinos_semana` (sem FK, sem seed). Nome do arquivo real é `RotinaDb.kt` (a tarefa citava `RotinaDatabase.kt`). Verificado no celular: `user_version=3`, tabela com schema esperado, `room_master_table` atualizado e 7 metas preservadas
 - 4.2: card "Treino do Dia" segue o dia da semana de `dataSelecionada`; editor dos 7 dias com título/descrição e "Salvar" individual. Erro de compilação pego e corrigido: `items(1..7)` caía na sobrecarga `count: Int` → `items((1..7).toList())`. Verificado no celular: salvar Terça atualizou o card na hora; DB com `(2, 'Peito e Triceps', 'Supino, crucifixo e Triceps corda')`; navegar para segunda mostrou "Nenhum treino..." e voltar para hoje restaurou o treino
 - 4.3: `RegistroTreinoDia` (PK natural `data`) e `ExercicioRegistro` (PK autoGenerate + índice em `data`); DAO com flows `registroTreinoDoDia`/`exerciciosDoDia`, `@Upsert` e `apagarExercicio(id)`; migration `MIGRACAO_3_4` no companion (padrão das anteriores) e `version=4`. Sem teste JVM novo (schema/DAO gerados pelo Room; validação por compilação + migration real, mesmo padrão da 4.1). Verificado no celular: `user_version=4`, `PRAGMA integrity_check=ok`, schemas exatos, índice `index_exercicios_registro_data`, 7 metas e treino da Terça preservados, `room_master_table` atualizado e app abriu sem crash
+- 4.4: diário em `TelaRegistroTreino` (data selecionada, checkboxes de concluído/cardio, observações, lista e diálogo de exercício); helpers puros `resumoExercicio`/`resumoCardio`/`resumoExerciciosAnotados` com TDD 8/8 (19 testes no total). Erro de compilação pego: `registro?.alteracoes` não existe (campo real `alteracoesRotina`) → corrigido. No celular: marcar concluído, observação, "Supino Reto" 4 séries/10 reps/30 kg e cardio 20 min Esteira; card exibiu badge, "Exercícios: 1 anotado" e "Cardio: 20 min (Esteira)"; apagar exercício de teste e cold start confirmados; DB `registro_treino_dia (20760, 1, ..., 1, 'Esteira', 20)` e `exercicios_registro (1, 20760, 'Supino Reto', 4, '10', '30 kg', 1)`. Navegar para 02/11 não mostrou resumo e voltar para hoje restaurou
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
