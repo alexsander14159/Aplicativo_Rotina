@@ -2,8 +2,8 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 3 com Tarefas 3.1, 3.2 e seletor de calendário entregues; Marco 1 concluído no celular
-**Próxima ação:** revisão do maestro e definição das próximas tarefas.
+## Estado atual: Fase 3 — Marco 3 concluído; Marco 4 em execução (Tarefa 4.1: dados do treino entregues)
+**Próxima ação:** revisão do maestro e Tarefa 4.2 (UI do treino da semana).
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -70,6 +70,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 3.1 Lembrete configurável + notificação clicável | ✅ (TimePicker + SharedPreferences; reagenda; toque na notificação abre o app — verificado no celular) |
 | Marco 3.2 Navegação por datas + resumo do dia | ✅ (flatMapLatest; ←/Seguinte/Hoje; card com % e badge Folga — verificado no celular) |
 | Marco 3.3 Seletor de data por calendário | ✅ (DatePickerDialog nativo ao tocar na data; abre no dia selecionado — verificado no celular) |
+| Marco 4.1 Dados do treino da semana (Room + migration 2→3) | ✅ (`TreinoSemana`, DAO e migration; `user_version=3` e tabela conferidos no celular, 7 metas preservadas) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
@@ -87,6 +88,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 3.1: horário do lembrete em `SharedPreferences` (`rotina_prefs`); `agendar()` no start usa **KEEP** (não desloca), `salvarEReagendar()` usa **CANCEL_AND_REENQUEUE** (novo horário vale já); notificação usa `PendingIntent` imutável para `MainActivity`. Verificado no celular: 21:30 persistido, job com latência +6h59m (próximo 21:30) e toque na notificação abriu o app; horário restaurado para 20:00
 - 3.2: `dataSelecionada: MutableStateFlow<Long>` + `flatMapLatest` para metas/submetas/dia; escritas capturam a data no clique; resumo/rótulo em funções puras (`resumoDoDia` com arredondamento, `rotuloData`) cobertas por 5 testes JVM. Verificado no celular: ←/Seguinte/Hoje, resumo 1/7=14% e 2/7=29%, badge Folga; estado restaurado (0/7, folga off)
 - 3.3: data no topo é clicável e abre `DatePickerDialog` nativo iniciando em `dataSelecionada`; callback grava `LocalDate.of(ano, mes+1, dia).toEpochDay()` via `selecionarData()`. Verificado no celular: mês anterior → 15/10/2026, botão "Hoje" → 03/11/2026
+- 4.1: entidade `TreinoSemana` com PK natural (`diaSemana` 1–7) e `@Upsert`; migration `MIGRACAO_2_3` cria `treinos_semana` (sem FK, sem seed). Nome do arquivo real é `RotinaDb.kt` (a tarefa citava `RotinaDatabase.kt`). Verificado no celular: `user_version=3`, tabela com schema esperado, `room_master_table` atualizado e 7 metas preservadas
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00

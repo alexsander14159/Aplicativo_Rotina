@@ -140,4 +140,15 @@ interface RotinaDao {
         apagarSubmetasDaMeta(item.id)
         metaApagar(item)
     }
+
+    // ---- treino da semana (1 = segunda ... 7 = domingo) ----
+
+    @Query("SELECT * FROM treinos_semana WHERE diaSemana = :diaSemana")
+    fun treinoDoDia(diaSemana: Int): Flow<TreinoSemana?>
+
+    @Query("SELECT * FROM treinos_semana ORDER BY diaSemana ASC")
+    fun todosTreinos(): Flow<List<TreinoSemana>>
+
+    @Upsert
+    suspend fun salvarTreino(treino: TreinoSemana)
 }
