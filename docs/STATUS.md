@@ -1,9 +1,9 @@
 # STATUS — Rotina App
 
-Atualizado: 2026-10-30
+Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 em execução — Marco 2 (spec v2 "rotina diária" aprovada; Marco 1 concluído no celular)
-**Próxima ação:** Tarefa 2.1 — entidades/migration v2 + DAO. EM seguida 2.2 e 2.3.
+## Estado atual: Fase 3 — Marco 2 concluído e commitado (spec v2 "rotina diária"; Marco 1 concluído no celular)
+**Próxima ação:** aguardar aprovação do maestro para o Marco 3 (lembrete configurável + resumo do dia).
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -65,7 +65,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 |---|---|
 | Marco 2.1 Dados v2 (migration, entities, DAO) | ✅ (`89872d2` — migration provada no banco real) |
 | Marco 2.2 Dia do usuário (submetas, alvo, folga) | ✅ (`dcbdc27` — folga ON→OFF provada visual+DB) |
-| Marco 2.3 Gerenciar metas (CRUD) + testes | ✅ (TDD 4/4; criar/editar/mover/apagar e submetas provados no celular) |
+| Marco 2.3 Gerenciar metas (CRUD) + testes | ✅ (`e11ca02` — TDD 4/4; criar/editar/mover/apagar e submetas provados no celular) |
 | Marco 2.4 Fechamento Marco 2 | ✅ (seed+schema conferidos; migração, folga, submetas, CRUD e TDD validados; pendência menor: tap no checkbox no modelo novo requer ajuste de foco — documentado) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
