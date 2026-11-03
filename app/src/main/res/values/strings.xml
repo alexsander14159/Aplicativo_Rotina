@@ -9,4 +9,8 @@
     <string name="dia_seguinte">Seguinte</string>
     <string name="hoje">Hoje</string>
     <string name="resumo_concluidas">%1 de %2 metas concluídas</string>
+    <string name="treino_titulo">Treino do Dia</string>
+    <string name="treino_sem_treino">Nenhum treino definido para hoje</string>
+    <string name="treino_editar">Editar Treinos da Semana</string>
+    <string name="selecionar_data">Selecionar data no calendário</string>
 </resources>

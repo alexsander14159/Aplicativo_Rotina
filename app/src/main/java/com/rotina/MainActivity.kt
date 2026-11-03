@@ -1,6 +1,7 @@
 package com.rotina
 
 import android.Manifest
+import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.pm.PackageManager
 import android.os.Build
@@ -19,6 +20,7 @@ import com.rotina.ui.RotinaViewModel
 import com.rotina.ui.RotinaViewModelFactory
 import com.rotina.ui.TelaMetas
 import com.rotina.ui.TelaMetasEdit
+import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
 
@@ -47,6 +49,18 @@ class MainActivity : ComponentActivity() {
                     vm = vm,
                     lembreteHora = horaLembrete.value,
                     lembreteMinuto = minutoLembrete.value,
+                    onAbrirCalendario = {
+                        val selecionada = LocalDate.ofEpochDay(vm.dataSelecionada.value)
+                        DatePickerDialog(
+                            this@MainActivity,
+                            { _, ano, mes, dia ->
+                                vm.selecionarData(LocalDate.of(ano, mes + 1, dia).toEpochDay())
+                            },
+                            selecionada.year,
+                            selecionada.monthValue - 1,
+                            selecionada.dayOfMonth,
+                        ).show()
+                    },
                     onEditarLembrete = {
                         TimePickerDialog(
                             this@MainActivity,

@@ -1,5 +1,6 @@
 package com.rotina.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,6 +38,7 @@ fun TelaMetas(
     vm: RotinaViewModel,
     lembreteHora: Int = 20,
     lembreteMinuto: Int = 0,
+    onAbrirCalendario: (() -> Unit)? = null,
     onEditarLembrete: (() -> Unit)? = null,
     onTesteLembrete: (() -> Unit)? = null,
     onEditarMetas: (() -> Unit)? = null,
@@ -90,10 +92,15 @@ fun TelaMetas(
                         Text("← Anterior")
                     }
                     Text(
-                        text = rotuloData(dataSelecionada, hoje),
+                        text = rotuloData(dataSelecionada, hoje) + "  📅",
                         style = MaterialTheme.typography.titleMedium,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable(enabled = onAbrirCalendario != null) {
+                                onAbrirCalendario?.invoke()
+                            }
+                            .padding(vertical = 8.dp),
                     )
                     TextButton(
                         onClick = vm::irParaDiaSeguinte,

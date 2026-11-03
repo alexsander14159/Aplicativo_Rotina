@@ -122,6 +122,11 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         dataSelecionada.value = LocalDate.now().toEpochDay()
     }
 
+    /** Seleciona uma data arbitrária (ex.: escolhida no calendário). */
+    fun selecionarData(epochDay: Long) {
+        dataSelecionada.value = epochDay
+    }
+
     // ---- CRUD da rotina (configuração) ----
 
     /** Cria meta nova no fim da lista com o alvo do dia em texto. */

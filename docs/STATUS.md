@@ -2,7 +2,7 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 3 com Tarefas 3.1 e 3.2 entregues; Marco 1 concluído no celular
+## Estado atual: Fase 3 — Marco 3 com Tarefas 3.1, 3.2 e seletor de calendário entregues; Marco 1 concluído no celular
 **Próxima ação:** revisão do maestro e definição das próximas tarefas.
 
 ## ✅ Versões fixadas (Tarefa 1)
@@ -69,6 +69,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 2.4 Fechamento Marco 2 | ✅ (seed+schema conferidos; migração, folga, submetas, CRUD e TDD validados; pendência menor: tap no checkbox no modelo novo requer ajuste de foco — documentado) |
 | Marco 3.1 Lembrete configurável + notificação clicável | ✅ (TimePicker + SharedPreferences; reagenda; toque na notificação abre o app — verificado no celular) |
 | Marco 3.2 Navegação por datas + resumo do dia | ✅ (flatMapLatest; ←/Seguinte/Hoje; card com % e badge Folga — verificado no celular) |
+| Marco 3.3 Seletor de data por calendário | ✅ (DatePickerDialog nativo ao tocar na data; abre no dia selecionado — verificado no celular) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
@@ -85,6 +86,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - Geral: verificação no aparelho **agrupada** (celular desconectado na hora) — descoberta de bug de runtime fica deslocada no tempo; mitigado por checklist manual detalhado
 - 3.1: horário do lembrete em `SharedPreferences` (`rotina_prefs`); `agendar()` no start usa **KEEP** (não desloca), `salvarEReagendar()` usa **CANCEL_AND_REENQUEUE** (novo horário vale já); notificação usa `PendingIntent` imutável para `MainActivity`. Verificado no celular: 21:30 persistido, job com latência +6h59m (próximo 21:30) e toque na notificação abriu o app; horário restaurado para 20:00
 - 3.2: `dataSelecionada: MutableStateFlow<Long>` + `flatMapLatest` para metas/submetas/dia; escritas capturam a data no clique; resumo/rótulo em funções puras (`resumoDoDia` com arredondamento, `rotuloData`) cobertas por 5 testes JVM. Verificado no celular: ←/Seguinte/Hoje, resumo 1/7=14% e 2/7=29%, badge Folga; estado restaurado (0/7, folga off)
+- 3.3: data no topo é clicável e abre `DatePickerDialog` nativo iniciando em `dataSelecionada`; callback grava `LocalDate.of(ano, mes+1, dia).toEpochDay()` via `selecionarData()`. Verificado no celular: mês anterior → 15/10/2026, botão "Hoje" → 03/11/2026
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
