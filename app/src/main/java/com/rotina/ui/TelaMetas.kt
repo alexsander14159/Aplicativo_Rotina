@@ -42,10 +42,12 @@ fun TelaMetas(
     onEditarLembrete: (() -> Unit)? = null,
     onTesteLembrete: (() -> Unit)? = null,
     onEditarMetas: (() -> Unit)? = null,
+    onEditarTreinos: (() -> Unit)? = null,
 ) {
     val metas by vm.metas.collectAsState()
     val submetas by vm.submetas.collectAsState()
     val dia by vm.dia.collectAsState()
+    val treino by vm.treinoDoDia.collectAsState()
     val dataSelecionada by vm.dataSelecionada.collectAsState()
     val hoje = LocalDate.now().toEpochDay()
     val ehHoje = dataSelecionada == hoje
@@ -140,6 +142,36 @@ fun TelaMetas(
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // Treino do dia (segue o dia da semana da data selecionada)
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = "Treino do Dia",
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = treino?.titulo?.takeIf { it.isNotBlank() }
+                                ?: "Nenhum treino definido para hoje",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                        val descricao = treino?.descricao.orEmpty()
+                        if (descricao.isNotBlank()) {
+                            Text(
+                                text = descricao,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        if (onEditarTreinos != null) {
+                            TextButton(onClick = onEditarTreinos) {
+                                Text("Editar Treinos da Semana")
                             }
                         }
                     }

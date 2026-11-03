@@ -20,6 +20,7 @@ import com.rotina.ui.RotinaViewModel
 import com.rotina.ui.RotinaViewModelFactory
 import com.rotina.ui.TelaMetas
 import com.rotina.ui.TelaMetasEdit
+import com.rotina.ui.TelaTreinosEdit
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -37,12 +38,18 @@ class MainActivity : ComponentActivity() {
         val (horaInicial, minutoInicial) = obterHorario(applicationContext)
         setContent {
             val telaEdicao = rememberSaveable { mutableStateOf(false) }
+            val modoTreinosEdit = rememberSaveable { mutableStateOf(false) }
             val horaLembrete = rememberSaveable { mutableStateOf(horaInicial) }
             val minutoLembrete = rememberSaveable { mutableStateOf(minutoInicial) }
             if (telaEdicao.value) {
                 TelaMetasEdit(
                     vm = vm,
                     onVoltar = { telaEdicao.value = false },
+                )
+            } else if (modoTreinosEdit.value) {
+                TelaTreinosEdit(
+                    vm = vm,
+                    onVoltar = { modoTreinosEdit.value = false },
                 )
             } else {
                 TelaMetas(
@@ -80,6 +87,7 @@ class MainActivity : ComponentActivity() {
                         null
                     },
                     onEditarMetas = { telaEdicao.value = true },
+                    onEditarTreinos = { modoTreinosEdit.value = true },
                 )
             }
         }

@@ -11,6 +11,7 @@ import com.rotina.data.Meta
 import com.rotina.data.RotinaDao
 import com.rotina.data.Submeta
 import com.rotina.data.SubmetaDia
+import com.rotina.data.TreinoSemana
 import java.time.LocalDate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,17 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
     val dia: StateFlow<Dia?> = dataSelecionada
         .flatMapLatest { data -> dao.diaCarregar(data) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    /** Treino da semana correspondente ao dia selecionado (1 = segunda ... 7 = domingo). */
+    val treinoDoDia: StateFlow<TreinoSemana?> = dataSelecionada
+        .flatMapLatest { epoch ->
+            val diaSemana = LocalDate.ofEpochDay(epoch).dayOfWeek.value
+            dao.treinoDoDia(diaSemana)
+        }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    val todosTreinos: StateFlow<List<TreinoSemana>> = dao.todosTreinos()
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
     // Configuração (CRUD): lista completa de metas e submetas, sem estado do dia.
     val metasCfg: StateFlow<List<Meta>> = dao.metas()
@@ -125,6 +137,13 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
     /** Seleciona uma data arbitrária (ex.: escolhida no calendário). */
     fun selecionarData(epochDay: Long) {
         dataSelecionada.value = epochDay
+    }
+
+    /** Salva (ou substitui) o treino de um dia da semana. */
+    fun salvarTreino(diaSemana: Int, titulo: String, descricao: String) {
+        viewModelScope.launch {
+            dao.salvarTreino(TreinoSemana(diaSemana = diaSemana, titulo = titulo, descricao = descricao))
+        }
     }
 
     // ---- CRUD da rotina (configuração) ----

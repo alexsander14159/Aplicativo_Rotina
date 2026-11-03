@@ -2,8 +2,8 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 3 concluído; Marco 4 em execução (Tarefa 4.1: dados do treino entregues)
-**Próxima ação:** revisão do maestro e Tarefa 4.2 (UI do treino da semana).
+## Estado atual: Fase 3 — Marco 4 concluído (Tarefas 4.1 e 4.2 entregues); Marco 3 concluído no celular
+**Próxima ação:** revisão do maestro e definição das próximas tarefas (Marco 5).
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -71,6 +71,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 3.2 Navegação por datas + resumo do dia | ✅ (flatMapLatest; ←/Seguinte/Hoje; card com % e badge Folga — verificado no celular) |
 | Marco 3.3 Seletor de data por calendário | ✅ (DatePickerDialog nativo ao tocar na data; abre no dia selecionado — verificado no celular) |
 | Marco 4.1 Dados do treino da semana (Room + migration 2→3) | ✅ (`TreinoSemana`, DAO e migration; `user_version=3` e tabela conferidos no celular, 7 metas preservadas) |
+| Marco 4.2 Treino do dia + edição semanal | ✅ (card na tela principal + editor dos 7 dias; salvou Terça no celular e o card atualizou na hora; DB confirmou a linha) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
@@ -89,6 +90,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 3.2: `dataSelecionada: MutableStateFlow<Long>` + `flatMapLatest` para metas/submetas/dia; escritas capturam a data no clique; resumo/rótulo em funções puras (`resumoDoDia` com arredondamento, `rotuloData`) cobertas por 5 testes JVM. Verificado no celular: ←/Seguinte/Hoje, resumo 1/7=14% e 2/7=29%, badge Folga; estado restaurado (0/7, folga off)
 - 3.3: data no topo é clicável e abre `DatePickerDialog` nativo iniciando em `dataSelecionada`; callback grava `LocalDate.of(ano, mes+1, dia).toEpochDay()` via `selecionarData()`. Verificado no celular: mês anterior → 15/10/2026, botão "Hoje" → 03/11/2026
 - 4.1: entidade `TreinoSemana` com PK natural (`diaSemana` 1–7) e `@Upsert`; migration `MIGRACAO_2_3` cria `treinos_semana` (sem FK, sem seed). Nome do arquivo real é `RotinaDb.kt` (a tarefa citava `RotinaDatabase.kt`). Verificado no celular: `user_version=3`, tabela com schema esperado, `room_master_table` atualizado e 7 metas preservadas
+- 4.2: card "Treino do Dia" segue o dia da semana de `dataSelecionada`; editor dos 7 dias com título/descrição e "Salvar" individual. Erro de compilação pego e corrigido: `items(1..7)` caía na sobrecarga `count: Int` → `items((1..7).toList())`. Verificado no celular: salvar Terça atualizou o card na hora; DB com `(2, 'Peito e Triceps', 'Supino, crucifixo e Triceps corda')`; navegar para segunda mostrou "Nenhum treino..." e voltar para hoje restaurou o treino
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
