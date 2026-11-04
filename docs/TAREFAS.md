@@ -2,176 +2,124 @@
 
 Atualizado: 2026-11-03
 
-## Correção Crítica: Vigência Temporal de Metas e Submetas (Histórico Preservado)
+## Marco 5 — Diário por áudio → texto (Etapa 5.1 e 5.2)
 
 OpenCode #2 (DEV), siga estas instruções passo a passo:
 
-### Contexto do Problema:
-Quando o usuário cria uma meta em uma data futura (ex: 05/11/2026), essa meta atualmente aparece nos dias passados (04/11, 01/11...), porque as tabelas `metas_dia` e `submetas` não tinham filtro de data.
-
----
-
-### 1. Atualizar Entidades:
-Em `app/src/main/java/com/rotina/data/Meta.kt`:
+### 1. Modelagem no Room (`app/src/main/java/com/rotina/data/DiarioDia.kt`):
 ```kotlin
-@Entity(tableName = "metas_dia")
-data class Meta(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val nome: String,
-    val ordem: Int,
-    @ColumnInfo(defaultValue = "") val alvoTexto: String = "",
-    @ColumnInfo(defaultValue = "0") val dataInicio: Long = 0L,
-    @ColumnInfo(defaultValue = "NULL") val dataFim: Long? = null,
+package com.rotina.data
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "diario_dia")
+data class DiarioDia(
+    @PrimaryKey val data: Long,
+    val texto: String = "",
+    val atualizadoEm: Long = System.currentTimeMillis()
 )
 ```
 
-Em `app/src/main/java/com/rotina/data/Submeta.kt`:
+### 2. No `app/src/main/java/com/rotina/data/RotinaDao.kt`, adicionar:
 ```kotlin
-@Entity(
-    tableName = "submetas",
-    indices = [Index("metaId")],
-)
-data class Submeta(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val metaId: Long,
-    val nome: String,
-    val ordem: Int,
-    @ColumnInfo(defaultValue = "0") val dataInicio: Long = 0L,
-    @ColumnInfo(defaultValue = "NULL") val dataFim: Long? = null,
-)
+    @Query("SELECT * FROM diario_dia WHERE data = :data")
+    fun diarioDoDia(data: Long): Flow<DiarioDia?>
+
+    @Upsert
+    suspend fun salvarDiario(diario: DiarioDia)
 ```
 
----
-
-### 2. No `app/src/main/java/com/rotina/data/RotinaDb.kt`:
-- Aumentar `version = 5`.
-- Criar `MIGRACAO_4_5`:
+### 3. No `app/src/main/java/com/rotina/data/RotinaDb.kt`:
+- Aumentar `version = 6` e adicionar `DiarioDia::class` nas entities.
+- Criar a migração `MIGRACAO_5_6`:
 ```kotlin
-val MIGRACAO_4_5 = object : Migration(4, 5) {
+val MIGRACAO_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE metas_dia ADD COLUMN dataInicio INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE metas_dia ADD COLUMN dataFim INTEGER DEFAULT NULL")
-        db.execSQL("ALTER TABLE submetas ADD COLUMN dataInicio INTEGER NOT NULL DEFAULT 0")
-        db.execSQL("ALTER TABLE submetas ADD COLUMN dataFim INTEGER DEFAULT NULL")
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `diario_dia` (
+                `data` INTEGER NOT NULL,
+                `texto` TEXT NOT NULL,
+                `atualizadoEm` INTEGER NOT NULL,
+                PRIMARY KEY(`data`)
+            )
+            """.trimIndent()
+        )
     }
 }
 ```
-- Adicionar `MIGRACAO_4_5` no `.addMigrations(...)` do Room.
+- Registrar `.addMigrations(..., MIGRACAO_5_6)` no construtor do banco.
 
 ---
 
-### 3. No `app/src/main/java/com/rotina/data/RotinaDao.kt`:
-- Atualizar `checklistDoDia(data: Long)`:
-```sql
-SELECT m.id AS id, m.nome AS nome, m.ordem AS ordem,
-       m.alvoTexto AS alvoTexto, c.concluida AS concluida
-FROM metas_dia m
-LEFT JOIN checklist c ON c.metaId = m.id AND c.data = :data
-WHERE m.dataInicio <= :data AND (m.dataFim IS NULL OR m.dataFim >= :data)
-ORDER BY m.ordem ASC
-```
-
-- Atualizar `submetasDoDia(data: Long)`:
-```sql
-SELECT s.id AS id, s.metaId AS metaId, s.nome AS nome, s.ordem AS ordem,
-       m.ordem AS metaOrdem, sd.concluida AS concluida
-FROM submetas s
-JOIN metas_dia m ON m.id = s.metaId
-LEFT JOIN submeta_dia sd ON sd.submetaId = s.id AND sd.data = :data
-WHERE s.dataInicio <= :data AND (s.dataFim IS NULL OR s.dataFim >= :data)
-  AND m.dataInicio <= :data AND (m.dataFim IS NULL OR m.dataFim >= :data)
-ORDER BY m.ordem ASC, s.ordem ASC
-```
-
-- Adicionar consultas para a tela de edição respeitando a data selecionada:
-```kotlin
-    @Query("""
-        SELECT * FROM metas_dia 
-        WHERE dataInicio <= :data AND (dataFim IS NULL OR dataFim >= :data) 
-        ORDER BY ordem ASC
-    """)
-    fun metasNaData(data: Long): Flow<List<Meta>>
-
-    @Query("""
-        SELECT * FROM submetas 
-        WHERE dataInicio <= :data AND (dataFim IS NULL OR dataFim >= :data) 
-        ORDER BY metaId ASC, ordem ASC
-    """)
-    fun submetasNaData(data: Long): Flow<List<Submeta>>
-
-    @Query("UPDATE metas_dia SET dataFim = :dataFim WHERE id = :id")
-    suspend fun encerrarMeta(id: Long, dataFim: Long)
-
-    @Query("UPDATE submetas SET dataFim = :dataFim WHERE id = :id")
-    suspend fun encerrarSubmeta(id: Long, dataFim: Long)
+### 4. Permissão no `app/src/main/AndroidManifest.xml`:
+Adicionar no manifest (fora da tag application):
+```xml
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
 ```
 
 ---
 
-### 4. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
-- Conectar `metasCfg` e `submetasCfg` reativamente à `dataSelecionada`:
+### 5. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
+- Conectar o diário reativo à `dataSelecionada`:
 ```kotlin
-    val metasCfg: StateFlow<List<Meta>> = dataSelecionada
-        .flatMapLatest { dao.metasNaData(it) }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+    val diarioDoDia: StateFlow<DiarioDia?> = dataSelecionada
+        .flatMapLatest { dao.diarioDoDia(it) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
-    val submetasCfg: StateFlow<List<Submeta>> = dataSelecionada
-        .flatMapLatest { dao.submetasNaData(it) }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
-```
-- Ao criar meta ou submeta:
-```kotlin
-    fun criarMeta(nome: String, alvoTexto: String) {
+    fun salvarTextoDiario(texto: String) {
         viewModelScope.launch {
-            val proxima = (metasCfg.value.maxOfOrNull { it.ordem } ?: 0) + 1
-            dao.inserirMeta(
-                Meta(
-                    nome = nome,
-                    ordem = proxima,
-                    alvoTexto = alvoTexto,
-                    dataInicio = dataSelecionada.value
-                )
-            )
-        }
-    }
-
-    fun criarSubmeta(metaId: Long, nome: String) {
-        viewModelScope.launch {
-            val proxima = (submetasCfg.value.filter { it.metaId == metaId }.maxOfOrNull { it.ordem } ?: 0) + 1
-            dao.inserirSubmeta(
-                Submeta(
-                    metaId = metaId,
-                    nome = nome,
-                    ordem = proxima,
-                    dataInicio = dataSelecionada.value
+            dao.salvarDiario(
+                DiarioDia(
+                    data = dataSelecionada.value,
+                    texto = texto,
+                    atualizadoEm = System.currentTimeMillis()
                 )
             )
         }
     }
 ```
-- Ao apagar meta:
-Se `meta.dataInicio == dataSelecionada.value`, pode chamar `apagarMetaComDependencias(meta)`.
-Se `meta.dataInicio < dataSelecionada.value`, faz soft delete: `dao.encerrarMeta(meta.id, dataSelecionada.value - 1)` (assim ela deixa de aparecer hoje e no futuro, mas o histórico anterior fica 100% preservado!).
-Mesma lógica para submeta.
 
 ---
 
-### 5. Compilar e Testar:
+### 6. Transcrição Nativa de Áudio e Interface:
+Crie `app/src/main/java/com/rotina/audio/GravadorVoz.kt` (ou gerencie na Activity/Composable):
+- Usar `android.speech.SpeechRecognizer.createSpeechRecognizer(context)`.
+- Intent:
+  ```kotlin
+  Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+      putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+      putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+  }
+  ```
+- Listener `RecognitionListener` que atualiza o texto transcrito em `onResults` e `onPartialResults`.
+
+Na tela principal (`TelaMetas.kt`):
+- Adicionar o Card **"Diário do Dia"**:
+  - Exibe o texto transcrito salvo naquele dia.
+  - Botão **"🎙️ Gravar Diário"** (com solicitação da permissão `RECORD_AUDIO` em tempo de execução).
+  - Enquanto estiver gravando/ouvindo, exibe indicador visual: "🔴 Ouvindo... Fale o seu diário" e botão "Parar".
+  - Opção de editar o texto digitando caso queira corrigir algo.
+
+---
+
+### 7. Compilar e Testar:
+Execute uma tarefa por vez:
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Instale e teste no TECNO KL4:
-1. No app, vá pelo calendário para 05/11/2026.
-2. Crie uma meta nova (ex: "Meta Teste 05").
-3. Verifique se ela aparece no dia 05/11/2026.
-4. Volte pelo calendário para o dia de hoje (03/11/2026) ou anteriores.
-5. **CONFIRME:** A "Meta Teste 05" **NÃO PODE APARECER** nos dias anteriores a 05/11!
+Instale e teste no celular TECNO KL4:
+- Verificar permissão de microfone.
+- Gravar uma frase de teste ou salvar texto no diário.
+- Mudar de dia no calendário e verificar que o diário fica salvo no dia correto.
 
-### 6. Commit:
+### 8. Commit:
 ```powershell
 git add -A
-git commit -m "fix: vigencia temporal de metas e submetas com dataInicio e dataFim (migration 4 para 5)"
+git commit -m "feat: diario por audio gravado e transcrito no aparelho com Room v6 (marco 5)"
 ```
 
 Se houver erro, pare e mostre o erro completo.

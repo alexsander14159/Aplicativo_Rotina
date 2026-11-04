@@ -2,8 +2,8 @@
 
 Atualizado: 2026-11-03
 
-## Estado atual: Fase 3 — Marco 5 em andamento: vigência temporal de metas/submetas (migration 4→5) concluída e validada no celular; Marco 4 concluído
-**Próxima ação:** revisão do maestro e definição das próximas tarefas do Marco 5.
+## Estado atual: Fase 3 — Marco 5 (Diário por áudio → texto) concluído e validado no celular; Marco 4 concluído
+**Próxima ação:** revisão do maestro e definição da próxima tarefa (Marco 6 — IA).
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -13,6 +13,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 |---|---|---|
 | OpenCode (maestro) | GLM-5.3-Flash Free | Maestro + Dev |
 | OpenCode 1 | Nemotron (gratuito) | Ajudante leve: textos, documentação, revisão de leitura |
+| OpenCode 2 | DeepSeek V4.1 Flash Free | DEV: implementação e validação no aparelho |
 
 ---
 
@@ -59,7 +60,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 
 ---
 
-## 🚧 Fase 3 — andamento (Marco 1)
+## 🚧 Fase 3 — andamento (Marcos 1–5)
 
 | Tarefa | Estado |
 |---|---|
@@ -76,8 +77,9 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 4.4 Interface do diário de treino (registro, exercícios, cardio) | ✅ (TDD 8/8; tela com concluído/observações/cardio/exercícios; card com badge/contagem/cardio; salvar, reabrir, apagar e cold start verificados no celular) |
 | Ajuste de UI Rolagem única da tela principal | ✅ (`TelaMetas` com um único `LazyColumn`; cabeçalho, resumo, treino, lembrete e metas rolam juntos — verificado no celular) |
 | Correção de vigência temporal de metas/submetas (migration 4→5) | ✅ (`845213d` — `dataInicio`/`dataFim`; meta futura aparece só a partir da data de início; soft delete preserva histórico; 23/23 testes JVM; verificado no celular) |
+| Marco 5.1/5.2 Diário por áudio → texto (Room v6 + SpeechRecognizer nativo) | ✅ (`cbc33be` — `DiarioDia` + DAO + migration 5→6; card com gravação, permissão, edição e salvamento; 31/31 testes JVM; `assembleDebug`; transcrição real "meu dia foi produtivo" salva automaticamente; isolamento por data e cold start verificados no celular) |
 
-**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
+**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario → `cbc33be` diario por audio (marco 5)
 
 **Rulings (decisões anotadas ao vivo):**
 - T1: `kotlin-android` removido — AGP 9 tem **Kotlin embutido** (erro mostrado com texto completo, causa confirmada na doc oficial "Migrate to built-in Kotlin")
@@ -99,6 +101,8 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 4.4: diário em `TelaRegistroTreino` (data selecionada, checkboxes de concluído/cardio, observações, lista e diálogo de exercício); helpers puros `resumoExercicio`/`resumoCardio`/`resumoExerciciosAnotados` com TDD 8/8 (19 testes no total). Erro de compilação pego: `registro?.alteracoes` não existe (campo real `alteracoesRotina`) → corrigido. No celular: marcar concluído, observação, "Supino Reto" 4 séries/10 reps/30 kg e cardio 20 min Esteira; card exibiu badge, "Exercícios: 1 anotado" e "Cardio: 20 min (Esteira)"; apagar exercício de teste e cold start confirmados; DB `registro_treino_dia (20760, 1, ..., 1, 'Esteira', 20)` e `exercicios_registro (1, 20760, 'Supino Reto', 4, '10', '30 kg', 1)`. Navegar para 02/11 não mostrou resumo e voltar para hoje restaurou
 - Ajuste de UI: `TelaMetas` agora tem um único `LazyColumn` raiz (padding 24, espaçamento 8); cabeçalho, navegação de data, resumo, treino, botões de lembrete e metas/submetas são itens da mesma lista. No celular: swipe para cima removeu o cabeçalho "Rotina" da tela junto com o conteúdo e revelou as metas; swipe para baixo restaurou o topo; 19 testes e `assembleDebug` verdes, sem crash
 - 5.0 (vigência): `Meta`/`Submeta` ganharam `dataInicio` (default 0 = desde sempre) e `dataFim` (NULL = sem fim); `MIGRACAO_4_5` adiciona as colunas e `version=5`. No celular: `user_version=5`, `integrity_check=ok`, schema/defaults exatos, 7 metas e 2 submetas originais, 14 checklist, 3 `submeta_dia`, treino/registro preservados. O plano citava `inserirMeta`/`inserirSubmeta` (inexistentes); usei `metaSalvar`/`submetaSalvarCfg` (@Upsert) sob o `Mutex` existente. `moverMeta` passou a considerar só itens vigentes; ao encerrar/apagar não compacto ordens, para não reescrever o histórico (lacunas são inofensivas). Diálogo diferencia "Apagar" (criado na data) de "Encerrar" (histórico preservado). Teste no celular: calendário → 05/11, "Meta Teste 05" + "Sub Teste 05" visíveis em 05/11 e ausentes em 04/11/03/11 (resumo 0/8 vs 0/7); soft delete de meta criada em 01/11 e encerrada em 03/11 sumiu de hoje e permaneceu em 01/11; hard delete limpou o teste temporário. `testDebugUnitTest` 23/23 (4 novos de vigência), `assembleDebug`, cold start sem erros. Dados de teste deixados de propósito: "Meta Teste 05" e "Sub Teste 05" em 05/11
+- 5.1/5.2 (diário por áudio): `DiarioDia` (PK `data`), DAO `diarioDoDia`/`salvarDiario` (`@Upsert`), Room v6 + `MIGRACAO_5_6`; `SpeechRecognizer` nativo pt-BR com parciais e estados OCIOSO/OUVINDO/PROCESSANDO; `RECORD_AUDIO` em runtime + `<queries>` para `RecognitionService`; nenhum áudio gravado em arquivo. Card com gravar/parar/editar/salvar; auto-save do resultado final; bloqueio de navegação com edição suja; `ON_STOP` cancela e salva rascunho. TDD 8/8 novos (31/31 total), `assembleDebug`. No celular: migração real `user_version=6`/`integrity_check=ok` e dados preservados; permissão concedida; transcrição real "meu dia foi produtivo" salva automaticamente; edição "ok" salva e o aviso de não salvo bloqueou Anterior; calendário 04/11 vazio e volta a 03/11 restaurou; cold start e logcat sem erros. Desvios: `salvarTextoDiario(texto, data opcional)` + `trim()`; `<queries>`; estado PROCESSANDO. Dados de teste: diário de 03/11 (epoch 20760) "meu dia foi produtivo"
+- Revisão final 5.1/5.2: sem itens críticos/importantes remanescentes; corrigida a corrida entre Parar/processando e resultado final e o espelho de data antiga; auto-save de rascunho no `ON_STOP` mantido por decisão de produto
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
