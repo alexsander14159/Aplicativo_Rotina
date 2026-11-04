@@ -75,7 +75,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Marco 4.3 Diário do treino realizado (Room + migration 3→4) | ✅ (`RegistroTreinoDia`/`ExercicioRegistro`, DAO e migration; `user_version=4`, schemas/índice e dados preservados conferidos no celular) |
 | Marco 4.4 Interface do diário de treino (registro, exercícios, cardio) | ✅ (TDD 8/8; tela com concluído/observações/cardio/exercícios; card com badge/contagem/cardio; salvar, reabrir, apagar e cold start verificados no celular) |
 | Ajuste de UI Rolagem única da tela principal | ✅ (`TelaMetas` com um único `LazyColumn`; cabeçalho, resumo, treino, lembrete e metas rolam juntos — verificado no celular) |
-| Correção de vigência temporal de metas/submetas (migration 4→5) | ✅ (`dataInicio`/`dataFim`; meta futura aparece só a partir da data de início; soft delete preserva histórico; 23/23 testes JVM; verificado no celular) |
+| Correção de vigência temporal de metas/submetas (migration 4→5) | ✅ (`845213d` — `dataInicio`/`dataFim`; meta futura aparece só a partir da data de início; soft delete preserva histórico; 23/23 testes JVM; verificado no celular) |
 
 **Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario
 
