@@ -4,7 +4,7 @@ Atualizado: 2026-11-03
 
 ## Marco 6 — Assistente Inteligente ("Jarvis") de Rotina
 
-### Tarefa 6.1 (Em execução)
+### Tarefa 6.1 (Concluída e validada no celular — commit d477b0b)
 - **Objetivo:** Persistência do histórico de conversas com a IA no Room (v6 → v7) + Armazenamento seguro de Chave de API.
 - **Responsável:** OpenCode #2 (DEV)
 
