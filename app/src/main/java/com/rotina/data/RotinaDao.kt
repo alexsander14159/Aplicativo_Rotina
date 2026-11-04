@@ -34,10 +34,29 @@ interface RotinaDao {
 
     @Query(
         """
+        SELECT * FROM metas_dia
+        WHERE dataInicio <= :data AND (dataFim IS NULL OR dataFim >= :data)
+        ORDER BY ordem ASC
+        """,
+    )
+    fun metasNaData(data: Long): Flow<List<Meta>>
+
+    @Query(
+        """
+        SELECT * FROM submetas
+        WHERE dataInicio <= :data AND (dataFim IS NULL OR dataFim >= :data)
+        ORDER BY metaId ASC, ordem ASC
+        """,
+    )
+    fun submetasNaData(data: Long): Flow<List<Submeta>>
+
+    @Query(
+        """
         SELECT m.id AS id, m.nome AS nome, m.ordem AS ordem,
                m.alvoTexto AS alvoTexto, c.concluida AS concluida
         FROM metas_dia m
         LEFT JOIN checklist c ON c.metaId = m.id AND c.data = :data
+        WHERE m.dataInicio <= :data AND (m.dataFim IS NULL OR m.dataFim >= :data)
         ORDER BY m.ordem ASC
         """,
     )
@@ -50,6 +69,8 @@ interface RotinaDao {
         FROM submetas s
         JOIN metas_dia m ON m.id = s.metaId
         LEFT JOIN submeta_dia sd ON sd.submetaId = s.id AND sd.data = :data
+        WHERE s.dataInicio <= :data AND (s.dataFim IS NULL OR s.dataFim >= :data)
+          AND m.dataInicio <= :data AND (m.dataFim IS NULL OR m.dataFim >= :data)
         ORDER BY m.ordem ASC, s.ordem ASC
         """,
     )
@@ -94,6 +115,12 @@ interface RotinaDao {
 
     @Delete
     suspend fun submetaApagarCfg(item: Submeta)
+
+    @Query("UPDATE metas_dia SET dataFim = :dataFim WHERE id = :id")
+    suspend fun encerrarMeta(id: Long, dataFim: Long)
+
+    @Query("UPDATE submetas SET dataFim = :dataFim WHERE id = :id")
+    suspend fun encerrarSubmeta(id: Long, dataFim: Long)
 
     @Query("SELECT * FROM metas_dia WHERE id = :id")
     suspend fun obterMeta(id: Long): Meta?

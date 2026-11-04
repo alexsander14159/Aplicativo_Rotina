@@ -18,7 +18,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RegistroTreinoDia::class,
         ExercicioRegistro::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class RotinaDb : RoomDatabase() {
@@ -36,7 +36,7 @@ abstract class RotinaDb : RoomDatabase() {
         private fun build(context: Context): RotinaDb =
             Room.databaseBuilder(context, RotinaDb::class.java, "rotina.db")
                 .addCallback(MetasSeed)
-                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4)
+                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5)
                 .build()
 
         /** v1 → v2: alvo do dia nas metas + tabelas de submetas e folga. Dados preservados. */
@@ -111,6 +111,16 @@ abstract class RotinaDb : RoomDatabase() {
                     "CREATE INDEX IF NOT EXISTS `index_exercicios_registro_data` " +
                         "ON `exercicios_registro` (`data`)",
                 )
+            }
+        }
+
+        /** v4 → v5: vigência temporal de metas/submetas. Metas antigas ficam válidas desde 0 e sem fim. */
+        private val MIGRACAO_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE metas_dia ADD COLUMN dataInicio INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE metas_dia ADD COLUMN dataFim INTEGER DEFAULT NULL")
+                db.execSQL("ALTER TABLE submetas ADD COLUMN dataInicio INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE submetas ADD COLUMN dataFim INTEGER DEFAULT NULL")
             }
         }
 

@@ -63,11 +63,13 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         .flatMapLatest { dao.exerciciosDoDia(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-    // Configuração (CRUD): lista completa de metas e submetas, sem estado do dia.
-    val metasCfg: StateFlow<List<Meta>> = dao.metas()
+    // Configuração (CRUD): metas e submetas vigentes na data selecionada.
+    val metasCfg: StateFlow<List<Meta>> = dataSelecionada
+        .flatMapLatest { dao.metasNaData(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
-    val submetasCfg: StateFlow<List<Submeta>> = dao.submetasCfg()
+    val submetasCfg: StateFlow<List<Submeta>> = dataSelecionada
+        .flatMapLatest { dao.submetasNaData(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
     private val alternancia = Mutex()
@@ -204,12 +206,19 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     // ---- CRUD da rotina (configuração) ----
 
-    /** Cria meta nova no fim da lista com o alvo do dia em texto. */
+    /** Cria meta nova no fim da lista, vigente a partir da data selecionada. */
     fun criarMeta(nome: String, alvoTexto: String) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
+                val proxima = (metasCfg.value.maxOfOrNull { it.ordem } ?: 0) + 1
                 dao.metaSalvar(
-                    Meta(nome = nome, ordem = dao.maiorOrdemMeta() + 1, alvoTexto = alvoTexto.trim()),
+                    Meta(
+                        nome = nome,
+                        ordem = proxima,
+                        alvoTexto = alvoTexto.trim(),
+                        dataInicio = data,
+                    ),
                 )
             }
         }
@@ -222,37 +231,48 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         }
     }
 
-    /** Apaga a meta + submetas + todas as marcações (transação) e compacta as ordens. */
+    /** Apaga a meta se ela nasceu nesta data; senão encerra a vigência preservando o histórico. */
     fun apagarMeta(metaId: Long) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
                 val meta = dao.obterMeta(metaId) ?: return@withLock
-                dao.apagarMetaComDependencias(meta)
-                dao.metasSincronas().forEachIndexed { i, m ->
-                    if (m.ordem != i + 1) dao.metaSalvar(m.copy(ordem = i + 1))
+                if (podeApagarDefinitivamente(meta.dataInicio, data)) {
+                    dao.apagarMetaComDependencias(meta)
+                } else {
+                    dao.encerrarMeta(meta.id, data - 1)
                 }
             }
         }
     }
 
-    /** Cria submeta no fim da lista da meta. */
+    /** Cria submeta no fim da lista da meta, vigente a partir da data selecionada. */
     fun criarSubmeta(metaId: Long, nome: String) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
+                val proxima = (submetasCfg.value.filter { it.metaId == metaId }.maxOfOrNull { it.ordem } ?: 0) + 1
                 dao.submetaSalvarCfg(
-                    Submeta(metaId = metaId, nome = nome.trim(), ordem = dao.maiorOrdemSubmeta(metaId) + 1),
+                    Submeta(
+                        metaId = metaId,
+                        nome = nome.trim(),
+                        ordem = proxima,
+                        dataInicio = data,
+                    ),
                 )
             }
         }
     }
 
-    /** Apaga a submeta + marcações (transação) e compacta as ordens da meta. */
+    /** Apaga a submeta se ela nasceu nesta data; senão encerra a vigência preservando o histórico. */
     fun apagarSubmeta(submeta: Submeta) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
-                dao.apagarSubmetaComMarcas(submeta)
-                dao.submetasDaMeta(submeta.metaId).forEachIndexed { i, s ->
-                    if (s.ordem != i + 1) dao.submetaSalvarCfg(s.copy(ordem = i + 1))
+                if (podeApagarDefinitivamente(submeta.dataInicio, data)) {
+                    dao.apagarSubmetaComMarcas(submeta)
+                } else {
+                    dao.encerrarSubmeta(submeta.id, data - 1)
                 }
             }
         }
@@ -260,9 +280,12 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     /** Move a meta uma posição (deslocamento -1 ou +1), reescrevendo só o que mudou. */
     fun moverMeta(metaId: Long, deslocamento: Int) {
+        val data = dataSelecionada.value
         viewModelScope.launch {
             alternancia.withLock {
                 val metas = dao.metasSincronas()
+                    .filter { vigenteNaData(it.dataInicio, it.dataFim, data) }
+                    .sortedBy { it.ordem }
                 val de = metas.indexOfFirst { it.id == metaId }
                 if (de < 0) return@withLock
                 val para = (de + deslocamento).coerceIn(0, metas.size - 1)

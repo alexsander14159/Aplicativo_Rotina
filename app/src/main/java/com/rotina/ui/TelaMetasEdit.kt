@@ -34,6 +34,7 @@ fun TelaMetasEdit(
 ) {
     val metas by vm.metasCfg.collectAsState()
     val submetas by vm.submetasCfg.collectAsState()
+    val dataSelecionada by vm.dataSelecionada.collectAsState()
     val submetasPorMeta = remember(submetas) { submetas.groupBy { it.metaId } }
 
     var dialogoNovaMeta by remember { mutableStateOf(false) }
@@ -138,15 +139,24 @@ fun TelaMetasEdit(
     }
     if (metaApagando != null) {
         val meta = metaApagando!!
+        val definitivo = podeApagarDefinitivamente(meta.dataInicio, dataSelecionada)
         AlertDialog(
             onDismissRequest = { metaApagando = null },
-            title = { Text("Apagar meta") },
-            text = { Text("Apagar \"${meta.nome}\" e todas as submetas/marcações dela?") },
+            title = { Text(if (definitivo) "Apagar meta" else "Encerrar meta") },
+            text = {
+                Text(
+                    if (definitivo) {
+                        "Apagar \"${meta.nome}\" e todas as submetas/marcações dela?"
+                    } else {
+                        "Encerrar \"${meta.nome}\" a partir desta data? O histórico anterior será preservado."
+                    },
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
                     vm.apagarMeta(meta.id)
                     metaApagando = null
-                }) { Text("Apagar") }
+                }) { Text(if (definitivo) "Apagar" else "Encerrar") }
             },
             dismissButton = {
                 TextButton(onClick = { metaApagando = null }) { Text("Cancelar") }
