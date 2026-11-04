@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.rotina.data.ChecklistDia
+import com.rotina.data.DiarioDia
 import com.rotina.data.Dia
 import com.rotina.data.EstadoMeta
 import com.rotina.data.EstadoSubmeta
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -41,6 +43,13 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     val dia: StateFlow<Dia?> = dataSelecionada
         .flatMapLatest { data -> dao.diaCarregar(data) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+
+    /** Texto do diário salvo para a data selecionada (limpa antes de consultar a nova data). */
+    val diarioDoDia: StateFlow<DiarioDia?> = dataSelecionada
+        .flatMapLatest { data ->
+            dao.diarioDoDia(data).onStart { emit(null) }
+        }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
 
     /** Treino da semana correspondente ao dia selecionado (1 = segunda ... 7 = domingo). */
@@ -115,6 +124,19 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
                 }
                 dao.submetaSalvar(novo)
             }
+        }
+    }
+
+    /** Salva o texto transcrito/editado do diário; a data pode ser capturada no início da gravação. */
+    fun salvarTextoDiario(texto: String, data: Long = dataSelecionada.value) {
+        viewModelScope.launch {
+            dao.salvarDiario(
+                DiarioDia(
+                    data = data,
+                    texto = texto.trim(),
+                    atualizadoEm = System.currentTimeMillis(),
+                ),
+            )
         }
     }
 

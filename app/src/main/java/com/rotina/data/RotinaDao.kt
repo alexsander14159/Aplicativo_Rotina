@@ -90,6 +90,14 @@ interface RotinaDao {
     @Upsert
     suspend fun submetaSalvar(item: SubmetaDia)
 
+    // ---- diário do dia (chave natural = data) ----
+
+    @Query("SELECT * FROM diario_dia WHERE data = :data")
+    fun diarioDoDia(data: Long): Flow<DiarioDia?>
+
+    @Upsert
+    suspend fun salvarDiario(diario: DiarioDia)
+
     // ---- folga do dia (chave natural = data; @Upsert resolve pela própria chave) ----
 
     @Query("SELECT * FROM dias WHERE data = :data")

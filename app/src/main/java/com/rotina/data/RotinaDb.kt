@@ -17,8 +17,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         TreinoSemana::class,
         RegistroTreinoDia::class,
         ExercicioRegistro::class,
+        DiarioDia::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class RotinaDb : RoomDatabase() {
@@ -36,7 +37,7 @@ abstract class RotinaDb : RoomDatabase() {
         private fun build(context: Context): RotinaDb =
             Room.databaseBuilder(context, RotinaDb::class.java, "rotina.db")
                 .addCallback(MetasSeed)
-                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5)
+                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5, MIGRACAO_5_6)
                 .build()
 
         /** v1 → v2: alvo do dia nas metas + tabelas de submetas e folga. Dados preservados. */
@@ -121,6 +122,22 @@ abstract class RotinaDb : RoomDatabase() {
                 db.execSQL("ALTER TABLE metas_dia ADD COLUMN dataFim INTEGER DEFAULT NULL")
                 db.execSQL("ALTER TABLE submetas ADD COLUMN dataInicio INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE submetas ADD COLUMN dataFim INTEGER DEFAULT NULL")
+            }
+        }
+
+        /** v5 → v6: diário por dia (texto transcrito e data da última atualização). */
+        private val MIGRACAO_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `diario_dia` (
+                        `data` INTEGER NOT NULL,
+                        `texto` TEXT NOT NULL,
+                        `atualizadoEm` INTEGER NOT NULL,
+                        PRIMARY KEY(`data`)
+                    )
+                    """.trimIndent(),
+                )
             }
         }
 
