@@ -98,6 +98,20 @@ interface RotinaDao {
     @Upsert
     suspend fun salvarDiario(diario: DiarioDia)
 
+    // ---- histórico de conversas com a IA (Jarvis) ----
+
+    @Query("SELECT * FROM mensagens_ia ORDER BY criadoEm ASC")
+    fun todasMensagensIa(): Flow<List<MensagemIa>>
+
+    @Query("SELECT * FROM mensagens_ia WHERE data = :data ORDER BY criadoEm ASC")
+    fun mensagensIaDoDia(data: Long): Flow<List<MensagemIa>>
+
+    @Upsert
+    suspend fun salvarMensagemIa(msg: MensagemIa)
+
+    @Query("DELETE FROM mensagens_ia")
+    suspend fun limparHistoricoIa()
+
     // ---- folga do dia (chave natural = data; @Upsert resolve pela própria chave) ----
 
     @Query("SELECT * FROM dias WHERE data = :data")

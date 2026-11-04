@@ -18,8 +18,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         RegistroTreinoDia::class,
         ExercicioRegistro::class,
         DiarioDia::class,
+        MensagemIa::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class RotinaDb : RoomDatabase() {
@@ -37,7 +38,7 @@ abstract class RotinaDb : RoomDatabase() {
         private fun build(context: Context): RotinaDb =
             Room.databaseBuilder(context, RotinaDb::class.java, "rotina.db")
                 .addCallback(MetasSeed)
-                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5, MIGRACAO_5_6)
+                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5, MIGRACAO_5_6, MIGRACAO_6_7)
                 .build()
 
         /** v1 → v2: alvo do dia nas metas + tabelas de submetas e folga. Dados preservados. */
@@ -138,6 +139,25 @@ abstract class RotinaDb : RoomDatabase() {
                     )
                     """.trimIndent(),
                 )
+            }
+        }
+
+        /** v6 → v7: histórico de conversas com a IA (por dia, com índices de consulta). */
+        private val MIGRACAO_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `mensagens_ia` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `data` INTEGER NOT NULL,
+                        `origem` TEXT NOT NULL,
+                        `conteudo` TEXT NOT NULL,
+                        `criadoEm` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_data` ON `mensagens_ia` (`data`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_criadoEm` ON `mensagens_ia` (`criadoEm`)")
             }
         }
 
