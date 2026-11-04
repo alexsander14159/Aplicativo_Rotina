@@ -90,6 +90,20 @@ Checklist diário das 6 metas com Room, seed, lembrete fixo 20:00 com botão de 
 - Gerenciar metas (CRUD) com TDD 4/4 ✅
 - Próximo passo: Marco 3 — Lembrete configurável + resumo do dia
 
+## Marco 6 — Assistente IA ("Jarvis") — plano aprovado (03/11/2026)
+
+**Visão (usuário):** IA tipo Jarvis que guarda todas as mensagens, constrói personalidade com base no que o usuário fala, gera sempre um relatório do dia analisado, e é chamada por um botão para conversar com o próprio contexto do dia (perguntar o que devo melhorar).
+
+**Pilares:**
+1. **Memória contínua e personalidade adaptativa** — tabela `mensagens_ia` no Room guarda todas as conversas; a IA se lembra de conversas passadas e dos diários de áudio, aprendendo estilo/dificuldades. Mecanismos: perfil adaptativo salvo no app (texto que a própria IA atualiza) + histórico truncado no envio (custo).
+2. **Relatório diário automatizado** — analisa o dia selecionado (metas/submetas/folga, treino: cargas, séries, cardio, diário de voz) em tom de mentor: comemora vitórias, aponta falhas e dá o conselho para o dia seguinte.
+3. **Chat interativo ("Conversar com o Jarvis")** — botão na tela principal; tela de chat; a IA já entra sabendo tudo do dia (sem explicar do zero).
+4. **Chave de API — segurança** — tela de Configurações da IA (chega na 6.3): chave do Gemini digitada 1x, guardada em `SharedPreferences` privado no aparelho; nunca no código, no Git ou em logs (só status "chave definida").
+
+**Tarefas:** 6.1 banco de dados da IA + guarda da chave (detalhada em docs/TAREFAS.md) → 6.2 motor de contexto (reúne metas/treinos/diários + prompt do Jarvis; perfil adaptativo e truncamento) → 6.3 interface do chat + relatório diário + tela de configurações da chave + aviso de privacidade do envio.
+
+**Riscos acompanhados:** custo/quota da API (truncamento de contexto e limite por dia); privacidade (diário e treinos saem do aparelho para o Gemini — aviso antes do envio); chave de API (MODE_PRIVATE; backup do aparelho pode copiar — nunca logar).
+
 ## Regras de execução (Fase 3)
 - Máx. 2 agentes; OpenCode 1 apenas tarefas leves (maestri; fallback: docs/TAREFAS.md + STATUS.md)
 - TDD onde é barato (lógica pura em JVM); o resto verificado no aparelho

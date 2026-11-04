@@ -2,124 +2,120 @@
 
 Atualizado: 2026-11-03
 
-## Marco 5 — Diário por áudio → texto (Etapa 5.1 e 5.2)
+## Marco 6 — Assistente Inteligente ("Jarvis") de Rotina
 
-OpenCode #2 (DEV), siga estas instruções passo a passo:
+### Tarefa 6.1 (Em execução)
+- **Objetivo:** Persistência do histórico de conversas com a IA no Room (v6 → v7) + Armazenamento seguro de Chave de API.
+- **Responsável:** OpenCode #2 (DEV)
 
-### 1. Modelagem no Room (`app/src/main/java/com/rotina/data/DiarioDia.kt`):
+#### 1. Entidade `app/src/main/java/com/rotina/data/MensagemIa.kt`:
 ```kotlin
 package com.rotina.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "diario_dia")
-data class DiarioDia(
-    @PrimaryKey val data: Long,
-    val texto: String = "",
-    val atualizadoEm: Long = System.currentTimeMillis()
+@Entity(
+    tableName = "mensagens_ia",
+    indices = [Index(value = ["data"]), Index(value = ["criadoEm"])]
+)
+data class MensagemIa(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val data: Long, // epochDay do dia em que a conversa ocorreu
+    val origem: String, // "USER" ou "ASSISTANT"
+    val conteudo: String,
+    val criadoEm: Long = System.currentTimeMillis()
 )
 ```
 
-### 2. No `app/src/main/java/com/rotina/data/RotinaDao.kt`, adicionar:
+#### 2. Adicionar ao `RotinaDao.kt`:
 ```kotlin
-    @Query("SELECT * FROM diario_dia WHERE data = :data")
-    fun diarioDoDia(data: Long): Flow<DiarioDia?>
+    @Query("SELECT * FROM mensagens_ia ORDER BY criadoEm ASC")
+    fun todasMensagensIa(): Flow<List<MensagemIa>>
+
+    @Query("SELECT * FROM mensagens_ia WHERE data = :data ORDER BY criadoEm ASC")
+    fun mensagensIaDoDia(data: Long): Flow<List<MensagemIa>>
 
     @Upsert
-    suspend fun salvarDiario(diario: DiarioDia)
+    suspend fun salvarMensagemIa(msg: MensagemIa)
+
+    @Query("DELETE FROM mensagens_ia")
+    suspend fun limparHistoricoIa()
 ```
 
-### 3. No `app/src/main/java/com/rotina/data/RotinaDb.kt`:
-- Aumentar `version = 6` e adicionar `DiarioDia::class` nas entities.
-- Criar a migração `MIGRACAO_5_6`:
+#### 3. No `RotinaDb.kt`:
+- Aumentar `version = 7` e adicionar `MensagemIa::class` nas entities.
+- Criar a migração `MIGRACAO_6_7`:
 ```kotlin
-val MIGRACAO_5_6 = object : Migration(5, 6) {
+val MIGRACAO_6_7 = object : Migration(6, 7) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
             """
-            CREATE TABLE IF NOT EXISTS `diario_dia` (
+            CREATE TABLE IF NOT EXISTS `mensagens_ia` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 `data` INTEGER NOT NULL,
-                `texto` TEXT NOT NULL,
-                `atualizadoEm` INTEGER NOT NULL,
-                PRIMARY KEY(`data`)
+                `origem` TEXT NOT NULL,
+                `conteudo` TEXT NOT NULL,
+                `criadoEm` INTEGER NOT NULL
             )
             """.trimIndent()
         )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_data` ON `mensagens_ia` (`data`)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_criadoEm` ON `mensagens_ia` (`criadoEm`)")
     }
 }
 ```
-- Registrar `.addMigrations(..., MIGRACAO_5_6)` no construtor do banco.
+- Registrar `.addMigrations(..., MIGRACAO_6_7)`.
 
----
-
-### 4. Permissão no `app/src/main/AndroidManifest.xml`:
-Adicionar no manifest (fora da tag application):
-```xml
-<uses-permission android:name="android.permission.RECORD_AUDIO" />
-```
-
----
-
-### 5. No `app/src/main/java/com/rotina/ui/RotinaViewModel.kt`:
-- Conectar o diário reativo à `dataSelecionada`:
+#### 4. Gerenciador de Chave de API (`app/src/main/java/com/rotina/ia/IaConfig.kt`):
+- Funções para salvar e obter a chave do Gemini em `SharedPreferences` de forma privada no aparelho:
 ```kotlin
-    val diarioDoDia: StateFlow<DiarioDia?> = dataSelecionada
-        .flatMapLatest { dao.diarioDoDia(it) }
-        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = null)
+package com.rotina.ia
 
-    fun salvarTextoDiario(texto: String) {
-        viewModelScope.launch {
-            dao.salvarDiario(
-                DiarioDia(
-                    data = dataSelecionada.value,
-                    texto = texto,
-                    atualizadoEm = System.currentTimeMillis()
-                )
-            )
-        }
+import android.content.Context
+
+object IaConfig {
+    private const val PREFS = "rotina_ia_prefs"
+    private const val KEY_GEMINI = "gemini_api_key"
+
+    fun obterChave(context: Context): String {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(KEY_GEMINI, "") ?: ""
     }
+
+    fun salvarChave(context: Context, chave: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_GEMINI, chave.trim())
+            .apply()
+    }
+}
 ```
 
----
-
-### 6. Transcrição Nativa de Áudio e Interface:
-Crie `app/src/main/java/com/rotina/audio/GravadorVoz.kt` (ou gerencie na Activity/Composable):
-- Usar `android.speech.SpeechRecognizer.createSpeechRecognizer(context)`.
-- Intent:
-  ```kotlin
-  Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-      putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
-      putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-  }
-  ```
-- Listener `RecognitionListener` que atualiza o texto transcrito em `onResults` e `onPartialResults`.
-
-Na tela principal (`TelaMetas.kt`):
-- Adicionar o Card **"Diário do Dia"**:
-  - Exibe o texto transcrito salvo naquele dia.
-  - Botão **"🎙️ Gravar Diário"** (com solicitação da permissão `RECORD_AUDIO` em tempo de execução).
-  - Enquanto estiver gravando/ouvindo, exibe indicador visual: "🔴 Ouvindo... Fale o seu diário" e botão "Parar".
-  - Opção de editar o texto digitando caso queira corrigir algo.
-
----
-
-### 7. Compilar e Testar:
-Execute uma tarefa por vez:
+#### 5. Compilar e Testar:
 ```powershell
 .\gradlew.bat testDebugUnitTest
 .\gradlew.bat assembleDebug
 ```
-Instale e teste no celular TECNO KL4:
-- Verificar permissão de microfone.
-- Gravar uma frase de teste ou salvar texto no diário.
-- Mudar de dia no calendário e verificar que o diário fica salvo no dia correto.
+Validar no celular TECNO KL4.
 
-### 8. Commit:
+#### 6. Commit:
 ```powershell
 git add -A
-git commit -m "feat: diario por audio gravado e transcrito no aparelho com Room v6 (marco 5)"
+git commit -m "feat: persistencia de historico de mensagens da IA no Room v7 e gerenciador de chave (tarefa 6.1)"
 ```
 
-Se houver erro, pare e mostre o erro completo.
+---
+
+### Tarefa 6.2 (aguardando 6.1) — Motor de Contexto
+- Função que reúne todo o contexto do dia para enviar à IA: metas/submetas, folga, treino da semana + registro do treino, diário de áudio do dia e histórico do chat (`mensagens_ia`, truncado para as mensagens mais recentes).
+- Prompt do sistema do "Jarvis" (tom de mentor: comemora vitórias, aponta falhas, aconselha) + perfil adaptativo salvo no app, atualizado pela própria IA com o que aprende do usuário.
+- Detalhamento fino (modelo Gemini, truncamento, custo) será escrito e aprovado antes de delegar.
+
+### Tarefa 6.3 (aguardando 6.2) — Interface do Chat e Relatório Diário
+- Botão na tela principal abrir a tela de chat ("Conversar com o Jarvis").
+- Botão de briefing do dia: relatório diário em tom de mentor (analisa metas, treino com cargas/cardio e diário de voz).
+- Tela de Configurações da IA: digitar a chave do Gemini 1x (guardada pelo IaConfig; nunca exibida — só status "chave definida").
+- Privacidade: mostrar o que será enviado antes do primeiro envio do dia.
+
