@@ -1,9 +1,9 @@
 # STATUS — Rotina App
 
-Atualizado: 2026-11-03
+Atualizado: 2026-11-06
 
-## Estado atual: Fase 3 — Marco 6 (Jarvis) em andamento; Tarefa 6.1 concluída e validada no celular; Marcos 1–5 concluídos
-**Próxima ação:** aguardar o maestro definir a Tarefa 6.2 (motor de contexto); não iniciar sem spec aprovada.
+## Estado atual: Fase 3 — Marco 6 (Jarvis) em andamento; Tarefas 6.1, 6.2 e 6.3 concluídas; 6.1 e 6.3 validadas no celular; Marcos 1–5 concluídos
+**Próxima ação:** aguardar o maestro definir a próxima tarefa do Marco 6 (chat/relatório diário/configuração da chave e aviso de privacidade — escopo restante do plano); não iniciar sem spec aprovada.
 
 ## ✅ Versões fixadas (Tarefa 1)
 Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
@@ -60,7 +60,7 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 
 ---
 
-## 🚧 Fase 3 — andamento (Marcos 1–5)
+## 🚧 Fase 3 — andamento (Marcos 1–6)
 
 | Tarefa | Estado |
 |---|---|
@@ -79,8 +79,10 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 | Correção de vigência temporal de metas/submetas (migration 4→5) | ✅ (`845213d` — `dataInicio`/`dataFim`; meta futura aparece só a partir da data de início; soft delete preserva histórico; 23/23 testes JVM; verificado no celular) |
 | Marco 5.1/5.2 Diário por áudio → texto (Room v6 + SpeechRecognizer nativo) | ✅ (`cbc33be` — `DiarioDia` + DAO + migration 5→6; card com gravação, permissão, edição e salvamento; 31/31 testes JVM; `assembleDebug`; transcrição real "meu dia foi produtivo" salva automaticamente; isolamento por data e cold start verificados no celular) |
 | Marco 6.1 Histórico da IA + chave da API (Room v7) | ✅ (`d477b0b` — `MensagemIa` + DAO + migration 6→7 e `IaConfig`; 31/31 testes JVM; `assembleDebug`; migração real `user_version=7`/`integrity_check=ok`; dados antigos preservados; `mensagens_ia` vazia) |
+| Marco 6.2 Motor de contexto e prompt do Jarvis | ✅ (`9977d8c` — `ContextoIa`, `PerfilIa`, `PromptJarvis` e histórico truncado; 39/39 testes JVM; compilado e incluído no APK validado na 6.3) |
+| Marco 6.3 Linha do tempo de notas rápidas do dia | ✅ (`a25bb0d` — Room v8/`notas_dia`, `ContextoIa` com momentos, card "Momentos & Diário do Dia", texto+voz, lixeira e isolamento por data; 40/40 testes JVM; migração real, dados antigos preservados, cold start e logcat sem FATAL) |
 
-**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario → `cbc33be` diario por audio (marco 5) → `d477b0b` historico da IA e chave (marco 6)
+**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario → `cbc33be` diario por audio (marco 5) → `d477b0b` historico da IA e chave (marco 6) → `9977d8c` motor de contexto do Jarvis (6.2) → `a25bb0d` notas rápidas do dia (6.3)
 
 **Rulings (decisões anotadas ao vivo):**
 - T1: `kotlin-android` removido — AGP 9 tem **Kotlin embutido** (erro mostrado com texto completo, causa confirmada na doc oficial "Migrate to built-in Kotlin")
@@ -105,6 +107,8 @@ Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-and
 - 5.1/5.2 (diário por áudio): `DiarioDia` (PK `data`), DAO `diarioDoDia`/`salvarDiario` (`@Upsert`), Room v6 + `MIGRACAO_5_6`; `SpeechRecognizer` nativo pt-BR com parciais e estados OCIOSO/OUVINDO/PROCESSANDO; `RECORD_AUDIO` em runtime + `<queries>` para `RecognitionService`; nenhum áudio gravado em arquivo. Card com gravar/parar/editar/salvar; auto-save do resultado final; bloqueio de navegação com edição suja; `ON_STOP` cancela e salva rascunho. TDD 8/8 novos (31/31 total), `assembleDebug`. No celular: migração real `user_version=6`/`integrity_check=ok` e dados preservados; permissão concedida; transcrição real "meu dia foi produtivo" salva automaticamente; edição "ok" salva e o aviso de não salvo bloqueou Anterior; calendário 04/11 vazio e volta a 03/11 restaurou; cold start e logcat sem erros. Desvios: `salvarTextoDiario(texto, data opcional)` + `trim()`; `<queries>`; estado PROCESSANDO. Dados de teste: diário de 03/11 (epoch 20760) "meu dia foi produtivo"
 - Revisão final 5.1/5.2: sem itens críticos/importantes remanescentes; corrigida a corrida entre Parar/processando e resultado final e o espelho de data antiga; auto-save de rascunho no `ON_STOP` mantido por decisão de produto
 - 6.1: `MensagemIa` (`mensagens_ia`, PK autoGenerate, índices `data`/`criadoEm`), quatro métodos no DAO, Room `version=7` + `MIGRACAO_6_7` e `IaConfig` (SharedPreferences `rotina_ia_prefs`, `MODE_PRIVATE`). Sem nova lógica pura, então sem teste JVM novo; a suíte existente foi a regressão (31/31). No celular: cold start `COLD` sem crash/FATAL, `user_version=7`, `integrity_check=ok`, schema/índices exatos, `mensagens_ia` vazia, `room_master_table` atualizado e hash das linhas antigas idêntico ao snapshot v6. O banco real tem 8 metas (6 seed + 1 manual + `Meta Teste 05`, preservado de propósito), 1 diário de 03/11 e 1 registro de treino; nenhum foi alterado. Ruling: `MIGRACAO_6_7` ficou `private` como as migrações anteriores (mesma semântica); a chave não é exibida nem logada em nenhum ponto e não foi gravada nesta tarefa.
+- 6.2: o system do prompt sempre inclui `PerfilIa.PERFIL_PADRAO`, o perfil salvo quando diferente do padrão e o resumo determinístico do dia; o histórico é ordenado por `criadoEm`/`id` e truncado nas 30 mensagens mais recentes (em ordem ASC); origens desconhecidas são ignoradas. Sem UI própria: 39/39 testes JVM e incluído no APK da 6.3.
+- 6.3: `NotaDia`/`notas_dia` (PK autoGenerate, índices `data` e `criadoEm`), Room v8 + `MIGRACAO_7_8`; ViewModel expõe `notasDoDia` e `adicionarNota`/`apagarNota`; `ContextoIa` ganhou `notasRapidas` (default vazio para compatibilidade) e o resumo inclui "Momentos registrados ao longo do dia:", além de contar notas como registro do dia. O card "Momentos & Diário do Dia" mantém o diário e adiciona lista com hora, lixeira e "+ Anotar Momento". O diálogo próprio usa uma instância separada de `GravadorVoz` com rótulo "momento" (parâmetro opcional novo), permissão de microfone, ditado/parcial, cancelamento no `ON_STOP` e `destroy` ao fechar. No celular: migração real `user_version=8`/`integrity_check=ok`; hash das tabelas antigas idêntico ao snapshot v7 (a única diferença foi uma nova linha normal em `dias` para hoje, sem alterar a linha antiga); 2 notas em 06/11 ("1a refeicao concluida, 500ml de agua" às 07:49 e "Estudei Kotlin por 1 hora" às 07:53), 05/11 sem notas e volta restaurou; cold start manteve as 2 notas; lixeira apagou uma terceira nota temporária; voz iniciou "Ouvindo", transcreveu parcial em tempo real e foi cancelada sem salvar; logcat sem FATAL. Testes 40/40. Dados de teste deixados de propósito: os 2 momentos de 06/11.
 
 ## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
 - Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
