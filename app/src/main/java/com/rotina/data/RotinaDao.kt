@@ -106,6 +106,10 @@ interface RotinaDao {
     @Query("SELECT * FROM mensagens_ia WHERE data = :data ORDER BY criadoEm ASC")
     fun mensagensIaDoDia(data: Long): Flow<List<MensagemIa>>
 
+    /** Histórico truncado, leitura pontual. O consumidor inverte para ordem ascendente. */
+    @Query("SELECT * FROM mensagens_ia ORDER BY criadoEm DESC LIMIT :limite")
+    suspend fun ultimasMensagensIa(limite: Int): List<MensagemIa>
+
     @Upsert
     suspend fun salvarMensagemIa(msg: MensagemIa)
 
