@@ -21,6 +21,7 @@ data class ContextoDia(
     val observacoes: String?,
     val diarioTexto: String, // diário de voz do dia (pode ser vazia)
     val perfil: String, // PerfilIa.obter(...)
+    val notasRapidas: List<String> = emptyList(), // "09:30: texto", em ordem ascendente
 )
 
 /** Coleta o contexto do dia. Chame em Dispatchers.IO (faz várias leituras pontuais). */
@@ -33,6 +34,7 @@ suspend fun coletar(dao: RotinaDao, data: Long, perfil: String): ContextoDia {
     val treino = dao.treinoDoDia(diaSemana).first()
     val registro = dao.registroTreinoDoDia(data).first()
     val exercicios = dao.exerciciosDoDia(data).first().map(::formatarExercicio)
+    val notas = dao.notasDoDia(data).first().map { "${it.hora}: ${it.texto}" }
 
     return ContextoDia(
         data = data,
@@ -46,6 +48,7 @@ suspend fun coletar(dao: RotinaDao, data: Long, perfil: String): ContextoDia {
         observacoes = registro?.alteracoesRotina?.trim()?.takeIf { it.isNotEmpty() },
         diarioTexto = diario?.texto?.trim().orEmpty(),
         perfil = perfil,
+        notasRapidas = notas,
     )
 }
 
@@ -72,6 +75,10 @@ fun resumoTexto(c: ContextoDia): String {
     c.cardio?.let { linhas += "Cardio: $it" }
     c.observacoes?.let { linhas += "Observações: $it" }
     if (c.diarioTexto.isNotBlank()) linhas += "Diário: ${c.diarioTexto}"
+    if (c.notasRapidas.isNotEmpty()) {
+        linhas += "Momentos registrados ao longo do dia:"
+        linhas += c.notasRapidas
+    }
 
     return linhas.joinToString("\n")
 }
@@ -83,7 +90,8 @@ private fun temRegistro(c: ContextoDia): Boolean =
         c.exercicios.isNotEmpty() ||
         c.cardio != null ||
         c.observacoes != null ||
-        c.diarioTexto.isNotBlank()
+        c.diarioTexto.isNotBlank() ||
+        c.notasRapidas.isNotEmpty()
 
 private fun formatarMeta(m: EstadoMeta): String {
     val alvo = m.alvoTexto.trim().takeIf { it.isNotEmpty() }?.let { " ($it)" }.orEmpty()

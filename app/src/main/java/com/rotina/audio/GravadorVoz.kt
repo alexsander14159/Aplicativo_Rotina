@@ -20,6 +20,7 @@ class GravadorVoz(
     private val aoFinal: (String) -> Unit,
     private val aoErro: (String) -> Unit,
     private val aoEstado: (EstadoGravacao) -> Unit,
+    private val rotulo: String = "diário",
 ) : RecognitionListener {
 
     private var estado = EstadoGravacao.OCIOSO
@@ -42,7 +43,7 @@ class GravadorVoz(
         if (estado != EstadoGravacao.OCIOSO) return
         val r = reconhecedor
         if (r == null) {
-            aoErro("Reconhecimento de voz indisponível neste aparelho. Digite o diário.")
+            aoErro("Reconhecimento de voz indisponível neste aparelho. Digite o $rotulo.")
             return
         }
         ignorarCallbacks = false

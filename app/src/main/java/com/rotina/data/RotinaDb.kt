@@ -19,8 +19,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ExercicioRegistro::class,
         DiarioDia::class,
         MensagemIa::class,
+        NotaDia::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 abstract class RotinaDb : RoomDatabase() {
@@ -38,7 +39,15 @@ abstract class RotinaDb : RoomDatabase() {
         private fun build(context: Context): RotinaDb =
             Room.databaseBuilder(context, RotinaDb::class.java, "rotina.db")
                 .addCallback(MetasSeed)
-                .addMigrations(MIGRACAO_1_2, MIGRACAO_2_3, MIGRACAO_3_4, MIGRACAO_4_5, MIGRACAO_5_6, MIGRACAO_6_7)
+                .addMigrations(
+                    MIGRACAO_1_2,
+                    MIGRACAO_2_3,
+                    MIGRACAO_3_4,
+                    MIGRACAO_4_5,
+                    MIGRACAO_5_6,
+                    MIGRACAO_6_7,
+                    MIGRACAO_7_8,
+                )
                 .build()
 
         /** v1 → v2: alvo do dia nas metas + tabelas de submetas e folga. Dados preservados. */
@@ -158,6 +167,25 @@ abstract class RotinaDb : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_data` ON `mensagens_ia` (`data`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_mensagens_ia_criadoEm` ON `mensagens_ia` (`criadoEm`)")
+            }
+        }
+
+        /** v7 → v8: momentos rápidos do dia (linha do tempo com hora e texto). */
+        private val MIGRACAO_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `notas_dia` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `data` INTEGER NOT NULL,
+                        `hora` TEXT NOT NULL,
+                        `texto` TEXT NOT NULL,
+                        `criadoEm` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_notas_dia_data` ON `notas_dia` (`data`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_notas_dia_criadoEm` ON `notas_dia` (`criadoEm`)")
             }
         }
 

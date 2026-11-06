@@ -3,20 +3,27 @@ package com.rotina.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.rotina.audio.EstadoGravacao
+import com.rotina.data.NotaDia
 
-/** Card do diário: campo editável, gravação nativa e status da última ação. */
+/** Card do diário e dos momentos: lista rápida, campo editável, gravação nativa e status. */
 @Composable
 fun DiarioCard(
     texto: String,
@@ -25,6 +32,9 @@ fun DiarioCard(
     disponivel: Boolean,
     pendente: Boolean,
     temDiarioSalvo: Boolean,
+    notas: List<NotaDia>,
+    onApagarNota: (Long) -> Unit,
+    onAnotarMomento: () -> Unit,
     onTextoChange: (String) -> Unit,
     onGravar: () -> Unit,
     onParar: () -> Unit,
@@ -37,9 +47,59 @@ fun DiarioCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "Diário do Dia",
+                text = "Momentos & Diário do Dia",
                 style = MaterialTheme.typography.titleSmall,
             )
+
+            if (notas.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    notas.forEach { nota ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                shape = MaterialTheme.shapes.small,
+                            ) {
+                                Text(
+                                    text = nota.hora,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = nota.texto,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f),
+                            )
+                            TextButton(
+                                onClick = { onApagarNota(nota.id) },
+                                enabled = !ocupado,
+                                modifier = Modifier.semantics {
+                                    contentDescription = "Apagar momento"
+                                },
+                            ) {
+                                Text("🗑️")
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text(
+                    text = "Nenhum momento registrado ainda.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            Button(
+                onClick = onAnotarMomento,
+                enabled = !ocupado,
+            ) {
+                Text("+ Anotar Momento")
+            }
+
             when (estado) {
                 EstadoGravacao.OUVINDO -> Text(
                     text = "🔴 Ouvindo... Fale o seu diário",

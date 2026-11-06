@@ -98,6 +98,17 @@ interface RotinaDao {
     @Upsert
     suspend fun salvarDiario(diario: DiarioDia)
 
+    // ---- momentos rápidos do dia (linha do tempo) ----
+
+    @Query("SELECT * FROM notas_dia WHERE data = :data ORDER BY criadoEm ASC")
+    fun notasDoDia(data: Long): Flow<List<NotaDia>>
+
+    @Upsert
+    suspend fun salvarNota(nota: NotaDia)
+
+    @Query("DELETE FROM notas_dia WHERE id = :id")
+    suspend fun apagarNota(id: Long)
+
     // ---- histórico de conversas com a IA (Jarvis) ----
 
     @Query("SELECT * FROM mensagens_ia ORDER BY criadoEm ASC")

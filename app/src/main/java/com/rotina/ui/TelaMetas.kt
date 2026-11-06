@@ -69,6 +69,7 @@ fun TelaMetas(
     val registroTreino by vm.registroTreinoDoDia.collectAsState()
     val exerciciosRegistro by vm.exerciciosDoDia.collectAsState()
     val diario by vm.diarioDoDia.collectAsState()
+    val notas by vm.notasDoDia.collectAsState()
     val dataSelecionada by vm.dataSelecionada.collectAsState()
     val hoje = LocalDate.now().toEpochDay()
     val ehHoje = dataSelecionada == hoje
@@ -81,6 +82,7 @@ fun TelaMetas(
     var textoEditado by rememberSaveable(dataSelecionada) { mutableStateOf(false) }
     var mensagemDiario by rememberSaveable(dataSelecionada) { mutableStateOf<String?>(null) }
     var estadoDiario by remember(dataSelecionada) { mutableStateOf(EstadoGravacao.OCIOSO) }
+    var mostrarDialogoMomento by rememberSaveable { mutableStateOf(false) }
 
     val gravadorDiario = remember(dataSelecionada) {
         GravadorVoz(
@@ -277,6 +279,9 @@ fun TelaMetas(
                         disponivel = gravadorDiario.disponivel,
                         pendente = textoEditado,
                         temDiarioSalvo = diario?.texto?.isNotBlank() == true,
+                        notas = notas,
+                        onApagarNota = vm::apagarNota,
+                        onAnotarMomento = { mostrarDialogoMomento = true },
                         onTextoChange = {
                             textoDiario = it
                             textoEditado = true
@@ -408,6 +413,15 @@ fun TelaMetas(
                         }
                     }
                 }
+            }
+            if (mostrarDialogoMomento) {
+                AnotarMomentoDialog(
+                    onDismiss = { mostrarDialogoMomento = false },
+                    onSalvar = { texto ->
+                        vm.adicionarNota(texto)
+                        mostrarDialogoMomento = false
+                    },
+                )
             }
         }
     }

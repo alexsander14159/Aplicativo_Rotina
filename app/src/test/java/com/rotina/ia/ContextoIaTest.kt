@@ -48,6 +48,23 @@ class ContextoIaTest {
         assertTrue(texto.contains("Hoje é folga"))
     }
 
+    @Test
+    fun `resumoTexto inclui momentos rapidos com horario`() {
+        val texto = resumoTexto(
+            contexto(
+                notasRapidas = listOf(
+                    "09:30: 1ª refeição concluída, 500ml de água",
+                    "14:15: Estudei Kotlin por 1 hora",
+                ),
+            ),
+        )
+
+        assertTrue(texto.contains("Momentos registrados ao longo do dia:"))
+        assertTrue(texto.contains("09:30: 1ª refeição concluída, 500ml de água"))
+        assertTrue(texto.contains("14:15: Estudei Kotlin por 1 hora"))
+        assertFalse(texto.contains("Nenhum registro no dia."))
+    }
+
     private fun contexto(
         folga: Boolean = false,
         metas: List<String> = emptyList(),
@@ -58,6 +75,7 @@ class ContextoIaTest {
         cardio: String? = null,
         observacoes: String? = null,
         diarioTexto: String = "",
+        notasRapidas: List<String> = emptyList(),
     ) = ContextoDia(
         data = 20760,
         folga = folga,
@@ -69,6 +87,7 @@ class ContextoIaTest {
         cardio = cardio,
         observacoes = observacoes,
         diarioTexto = diarioTexto,
+        notasRapidas = notasRapidas,
         perfil = PerfilIa.PERFIL_PADRAO,
     )
 }

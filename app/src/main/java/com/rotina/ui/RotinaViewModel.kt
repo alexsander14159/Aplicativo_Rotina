@@ -10,12 +10,15 @@ import com.rotina.data.EstadoMeta
 import com.rotina.data.EstadoSubmeta
 import com.rotina.data.ExercicioRegistro
 import com.rotina.data.Meta
+import com.rotina.data.NotaDia
 import com.rotina.data.RegistroTreinoDia
 import com.rotina.data.RotinaDao
 import com.rotina.data.Submeta
 import com.rotina.data.SubmetaDia
 import com.rotina.data.TreinoSemana
 import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -70,6 +73,11 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
 
     val exerciciosDoDia: StateFlow<List<ExercicioRegistro>> = dataSelecionada
         .flatMapLatest { dao.exerciciosDoDia(it) }
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    /** Momentos rápidos da data selecionada, em ordem de criação. */
+    val notasDoDia: StateFlow<List<NotaDia>> = dataSelecionada
+        .flatMapLatest { dao.notasDoDia(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
 
     // Configuração (CRUD): metas e submetas vigentes na data selecionada.
@@ -137,6 +145,28 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
                     atualizadoEm = System.currentTimeMillis(),
                 ),
             )
+        }
+    }
+
+    /** Adiciona um momento rápido na data selecionada, com a hora atual do aparelho. */
+    fun adicionarNota(texto: String) {
+        if (texto.isBlank()) return
+        val data = dataSelecionada.value
+        viewModelScope.launch {
+            val horaFormatada = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))
+            dao.salvarNota(
+                NotaDia(
+                    data = data,
+                    hora = horaFormatada,
+                    texto = texto.trim(),
+                ),
+            )
+        }
+    }
+
+    fun apagarNota(id: Long) {
+        viewModelScope.launch {
+            dao.apagarNota(id)
         }
     }
 
