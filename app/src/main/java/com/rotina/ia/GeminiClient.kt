@@ -9,7 +9,7 @@ import java.net.URL
 
 /** Cliente HTTPS mínimo da Gemini API. A chave fica no header, nunca na URL nem em logs. */
 object GeminiClient {
-    private const val MODELO = "gemini-2.5-flash"
+    private const val MODELO = "gemini-3.1-flash-lite"
     private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
     suspend fun enviar(
