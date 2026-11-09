@@ -2,119 +2,84 @@
 
 Atualizado: 2026-11-09
 
-## Estado atual: Fase 3 — Marco 6 (Jarvis) em andamento; Tarefas 6.1–6.4 concluídas; 6.1, 6.3 e 6.4 validadas no celular; 6.4 com chamada real validada usando o modelo `gemini-3.1-flash-lite`; Marcos 1–5 concluídos
-**Próxima ação:** aguardar o maestro definir a próxima tarefa do Marco 6 ou o fechamento do marco; não iniciar sem spec aprovada.
+## Estado atual: Marcos 1 a 6 CONCLUÍDOS e VALIDADOS no celular físico TECNO KL4 ✅
+**Próximo passo:** Marco 7 — Design & UI/UX Polish (Embelezamento visual, Material 3, tema escuro, ícones e acabamento).
 
-## ✅ Versões fixadas (Tarefa 1)
-Gradle 9.6.0 (cache local) | AGP 9.4.0 (**Kotlin embutido — plugin `kotlin-android` NÃO existe mais**) | Kotlin/KGP 2.2.10 | Compose BOM 2026.09.00 | activity-compose 1.13.0 | lifecycle 2.11.0 | Room 2.8.5 | WorkManager 2.12.0 | KSP 2.3.10 | JUnit 4.13.2 / JDK 17 / Build Tools 36 / compileSdk 37
+---
 
-## Agentes
+## 📱 Dispositivo & Ambiente
+- **Aparelho físico:** TECNO SPARK GO 1 (KL4), Android 14 (API 34)
+- **SDK:** `minSdk = 26`, `targetSdk = 37` (Android 15), `compileSdk = 37`
+- **Stack:** Kotlin nativo + Jetpack Compose (Material 3) + Room v8 + WorkManager 2.12 + Gemini API (gemini-3.1-flash-lite)
+- **Testes automatizados:** 41/41 testes JVM passando.
+
+---
+
+## 👥 Agentes
 | Terminal | Modelo | Papel |
 |---|---|---|
-| OpenCode (maestro) | GLM-5.3-Flash Free | Maestro + Dev |
-| OpenCode 1 | Nemotron (gratuito) | Ajudante leve: textos, documentação, revisão de leitura |
-| OpenCode 2 | DeepSeek V4.1 Flash Free | DEV: implementação e validação no aparelho |
+| Antigravity (maestro) | Gemini Flash / Claude Sonnet | Maestro: planejamento, pesquisa, delegação e revisão |
+| OpenCode #2 | GLM-5.3-Flash / DeepSeek | DEV principal: implementação e testes |
+| OpenCode | Nemotron gratuito | Ajudante leve: textos, documentação, revisão de leitura |
 
 ---
 
-## ✅ Ambiente (FASE 0)
-- JDK 17.0.12 LTS | Android Studio | Android SDK `C:\Users\Alex\AppData\Local\Android\Sdk`
-- adb 1.0.41 | Build Tools 36.0.0 | Platform android-37
-- `ANDROID_HOME` definido | `platform-tools` no PATH
-- Gradle: usará Gradle Wrapper no projeto
+## 🏆 Resumo dos Marcos Entregues (100% Funcionais no Aparelho)
 
-**Dispositivo de teste:** TECNO SPARK GO 1 (código de modelo KL4) / Android 14 (API 34)
-`minSdk = 26` | `targetSdk = 37` | `compileSdk = 37`
+### Marco 1: Base e Checklist Diário
+- Room Database com seed inicial de 6 metas.
+- Checklist diário com persistência em `ChecklistDia` (chave única por `data` e `metaId`).
+- Ruling do `@Upsert` por PK e proteção contra cliques rápidos com `Mutex`.
+- Lembrete diário com WorkManager e canal de notificação com ícone (`ic_notificacao`).
+
+### Marco 2: Metas Customizáveis e Submetas
+- CRUD de metas: criar, renomear, mover e apagar.
+- Suporte a submetas com marcação diária independente.
+- Alvo diário em texto (ex: "2h de estudo", "8 copos").
+- Chip "Folga do dia" com registro por data.
+
+### Marco 3: Lembrete Configurável e Navegação Temporal
+- Seletor de horário do lembrete (TimePicker) persistido em SharedPreferences e reagendado com `CANCEL_AND_REENQUEUE`.
+- Clique na notificação abre o app via `PendingIntent`.
+- Calendário mensal com seletor `DatePickerDialog` ao tocar na data: salta para qualquer dia em 1 clique.
+- Botão dinâmico "Hoje" para voltar ao dia atual.
+- Card "Resumo do Dia" com percentual e contagem de metas cumpridas.
+- Rolagem unificada em `LazyColumn` único da tela inteira.
+
+### Marco 4: Treino da Semana e Diário de Treino Realizado
+- Grade semanal de treinos planejados (Segunda a Domingo).
+- Card "Treino do Dia" que muda automaticamente conforme o dia da semana navegado no calendário.
+- Tela de anotação de treino realizado (`TelaRegistroTreino.kt`):
+  - Checkbox de treino concluído.
+  - Campo de texto para alterações da rotina / observações.
+  - Lista dinâmica de exercícios com **Séries**, **Repetições** e **Carga/Peso** (ex: *Supino Reto — 4 séries • 10 reps • 30 kg*).
+  - Seção de Cardio: ativação, tipo (ex: *Esteira*) e minutos.
+  - Room v4 com isolamento estrito por data.
+
+### Correção de Vigência Temporal (Migration 4 → 5)
+- Adicionados `dataInicio` e `dataFim` em `metas_dia` e `submetas`.
+- Metas criadas em datas futuras (ex: 05/11) **não aparecem** em dias anteriores (04/11, 03/11).
+- Soft-delete: encerrar meta no presente preserva o histórico intacto no passado.
+
+### Marco 5: Diário por Áudio Nativo e Notas de Pouco em Pouco
+- Transcrição nativa de voz usando `SpeechRecognizer` do Android em português (`pt-BR`), offline, privado e sem custos.
+- Permissão `RECORD_AUDIO` em tempo de execução.
+- Card "Momentos & Diário do Dia": feed com anotações soltas ao longo do dia, gravando horário exato (ex: `07:49 — 1ª refeição concluída`).
+- Room v8 (`notas_dia`).
+
+### Marco 6: Assistente Jarvis (IA)
+- Tela de Chat interativa estilo WhatsApp com balões de conversa e histórico perpétuo (`mensagens_ia`).
+- Diálogo seguro para colar a Chave da API Gemini (armazenada de forma estritamente privada em `IaConfig`, nunca exposta).
+- Motor de Contexto (`ContextoIa.kt`): reúne metas batidas, treino/cargas/cardio e momentos do dia.
+- Conexão HTTPS nativa com a API Gemini usando o modelo `gemini-3.1-flash-lite`.
+- Botão "Relatório do Dia": briefing diário personalizado com tom de mentor.
+- Testado e validado fisicamente no celular TECNO KL4 com resposta real gerada pelo Jarvis!
 
 ---
 
-## ✅ MCPs instalados
-
-| Nome | Comando | Status |
-|---|---|---|
-| context7 | `npx -y @upstash/context7-mcp` | ✅ enabled |
-| chrome-devtools | `npx -y chrome-devtools-mcp@latest` | ✅ enabled (web only) |
-| mobile-mcp | `npx -y @mobilenext/mobile-mcp@latest` | ✅ enabled |
-| droidmind | `uvx droidmind --adb-host localhost --adb-port 5037` | ✅ enabled |
-
-**Descartado:** `zillow/auto-mobile` — arquivado pelo Zillow em Dez/2025, sem manutenção.
-
----
-
-## ✅ Skills instaladas
-
-| Nome | Origem | Local |
-|---|---|---|
-| android-cli (plugin) | oficial AGY | `plugins/android-cli-plugin` |
-| task-observer | rebelytics | `skills/task-observer` |
-| systematic-debugging | AGY | `skills/systematic-debugging` |
-| test-driven-development | AGY | `skills/test-driven-development` |
-| svg-logo-designer | AGY | `skills/svg-logo-designer` |
-| mobile-design | sickn33/antigravity-awesome-skills | `skills/mobile-design` |
-| platform-design-android | ehmo/platform-design-skills | `skills/platform-design-android` |
-
-## ✅ Regras de código (projeto)
-| Nome | Origem | Local |
-|---|---|---|
-| compose-rules.md | PatrickJS/awesome-cursorrules | `.gemini/compose-rules.md` |
-
----
-
-## 🚧 Fase 3 — andamento (Marcos 1–6)
-
-| Tarefa | Estado |
-|---|---|
-| Marco 2.1 Dados v2 (migration, entities, DAO) | ✅ (`89872d2` — migration provada no banco real) |
-| Marco 2.2 Dia do usuário (submetas, alvo, folga) | ✅ (`dcbdc27` — folga ON→OFF provada visual+DB) |
-| Marco 2.3 Gerenciar metas (CRUD) + testes | ✅ (`e11ca02` — TDD 4/4; criar/editar/mover/apagar e submetas provados no celular) |
-| Marco 2.4 Fechamento Marco 2 | ✅ (seed+schema conferidos; migração, folga, submetas, CRUD e TDD validados; pendência menor: tap no checkbox no modelo novo requer ajuste de foco — documentado) |
-| Marco 3.1 Lembrete configurável + notificação clicável | ✅ (TimePicker + SharedPreferences; reagenda; toque na notificação abre o app — verificado no celular) |
-| Marco 3.2 Navegação por datas + resumo do dia | ✅ (flatMapLatest; ←/Seguinte/Hoje; card com % e badge Folga — verificado no celular) |
-| Marco 3.3 Seletor de data por calendário | ✅ (DatePickerDialog nativo ao tocar na data; abre no dia selecionado — verificado no celular) |
-| Marco 4.1 Dados do treino da semana (Room + migration 2→3) | ✅ (`TreinoSemana`, DAO e migration; `user_version=3` e tabela conferidos no celular, 7 metas preservadas) |
-| Marco 4.2 Treino do dia + edição semanal | ✅ (card na tela principal + editor dos 7 dias; salvou Terça no celular e o card atualizou na hora; DB confirmou a linha) |
-| Marco 4.3 Diário do treino realizado (Room + migration 3→4) | ✅ (`RegistroTreinoDia`/`ExercicioRegistro`, DAO e migration; `user_version=4`, schemas/índice e dados preservados conferidos no celular) |
-| Marco 4.4 Interface do diário de treino (registro, exercícios, cardio) | ✅ (TDD 8/8; tela com concluído/observações/cardio/exercícios; card com badge/contagem/cardio; salvar, reabrir, apagar e cold start verificados no celular) |
-| Ajuste de UI Rolagem única da tela principal | ✅ (`TelaMetas` com um único `LazyColumn`; cabeçalho, resumo, treino, lembrete e metas rolam juntos — verificado no celular) |
-| Correção de vigência temporal de metas/submetas (migration 4→5) | ✅ (`845213d` — `dataInicio`/`dataFim`; meta futura aparece só a partir da data de início; soft delete preserva histórico; 23/23 testes JVM; verificado no celular) |
-| Marco 5.1/5.2 Diário por áudio → texto (Room v6 + SpeechRecognizer nativo) | ✅ (`cbc33be` — `DiarioDia` + DAO + migration 5→6; card com gravação, permissão, edição e salvamento; 31/31 testes JVM; `assembleDebug`; transcrição real "meu dia foi produtivo" salva automaticamente; isolamento por data e cold start verificados no celular) |
-| Marco 6.1 Histórico da IA + chave da API (Room v7) | ✅ (`d477b0b` — `MensagemIa` + DAO + migration 6→7 e `IaConfig`; 31/31 testes JVM; `assembleDebug`; migração real `user_version=7`/`integrity_check=ok`; dados antigos preservados; `mensagens_ia` vazia) |
-| Marco 6.2 Motor de contexto e prompt do Jarvis | ✅ (`9977d8c` — `ContextoIa`, `PerfilIa`, `PromptJarvis` e histórico truncado; 39/39 testes JVM; compilado e incluído no APK validado na 6.3) |
-| Marco 6.3 Linha do tempo de notas rápidas do dia | ✅ (`a25bb0d` — Room v8/`notas_dia`, `ContextoIa` com momentos, card "Momentos & Diário do Dia", texto+voz, lixeira e isolamento por data; 40/40 testes JVM; migração real, dados antigos preservados, cold start e logcat sem FATAL) |
-| Marco 6.4 Chat Jarvis + Gemini API + relatório diário | ✅ (`7d66f2d` — `GeminiClient` HTTPS nativo com chave no header, chat com balões/rolagem/estado de pensamento, relatório do dia, voz e diálogo de chave mascarado com aviso de privacidade; 41/41 testes JVM; `assembleDebug`; no celular: validação inicial sem chave, balões, diálogo, voz e Voltar/back; depois o usuário configurou a chave; `mensagens_ia` estava limpa após a remoção dos testes sintéticos; `user_version=8`/`integrity_check=ok`; logcat sem FATAL) — ✅ 09/11/2026: chamada real validada no celular com `gemini-3.1-flash-lite` (`44cf3fa`); a mensagem "TesteModelo31" e o balão de resposta do Jarvis apareceram no chat; 41/41 testes JVM; `assembleDebug`; instalação `-r` preservou a chave e os dados; sem FATAL |
-
-**Commits:** `5139192` esqueleto → `05f2d63` Room+seed → `32aff6c` checklist → `1f04113` docs → `eda4fa9` fix upsert/toggleable → `a52dff8` lembrete diario → `cbc33be` diario por audio (marco 5) → `d477b0b` historico da IA e chave (marco 6) → `9977d8c` motor de contexto do Jarvis (6.2) → `a25bb0d` notas rápidas do dia (6.3) → `7d66f2d` chat/relatório/chave (6.4) → `44cf3fa` modelo gemini-3.1-flash-lite
-
-**Rulings (decisões anotadas ao vivo):**
-- T1: `kotlin-android` removido — AGP 9 tem **Kotlin embutido** (erro mostrado com texto completo, causa confirmada na doc oficial "Migrate to built-in Kotlin")
-- T2: DTO `EstadoMeta` **achatado** (sem `@Embedded`) — evita bug conhecido do KSP/built-in Kotlin (`[MissingType]`, família issue #3053); sem mudança semântica
-- T2: `arrayOf<Any>(nome, ordem)` no seed — o aviso do compilador (inferência p/ `Comparable`) quebraria o binding no celular
-- T3 (além do plano): `DAO.obter()` + `Mutex` no `alternar` — protege contra toques rápidos duplicados; custo: 1 consulta a mais por toque
-- T3 (bug do plano): **`@Upsert` do Room resolve conflito de índice único com UPDATE por PRIMARY KEY** — item chega com `id=0` → `WHERE id=0` → 0 linhas afetadas, silencioso (marcava, mas nunca desmarcava!). Fix: `atual.copy(concluida = ...)` preserva o id real; item de verdade novo usa `id=0` para inserir. Confirmado lendo o SQL gerado (`RotinaDao_Impl.kt`) e o banco via `run-as`+Python
-- T3 (UI): linha do checklist usa **`Row.toggleable` + Checkbox passivo (`onCheckedChange = null`)** — um único handler por toque (acessibilidade certa, `Role.Checkbox`)
-- T3 (ferramentas): **dump do banco no aparelho** = `python -c ... subprocess adb exec-out run-as cat` (PowerShell corrompe binário via `>`/UTF-16); `uiautomator dump` provou focus/foco do app
-- T4 (bug achado no aparelho): manifest sem `android:icon` → `applicationInfo.icon == 0` → `IllegalArgumentException: Invalid notification (no valid small icon)` e **crash** no botão de teste. Fix: `res/drawable/ic_notificacao.xml` (sino) + `android:icon` no manifest + `setSmallIcon(R.drawable.ic_notificacao)`
-- T4 (imprevisto): usuário usando o aparelho em paralelo → toque do adb caía no Instagram; solução: am start + conferir `mCurrentFocus` + tocar, em cadeia única
-- Geral: verificação no aparelho **agrupada** (celular desconectado na hora) — descoberta de bug de runtime fica deslocada no tempo; mitigado por checklist manual detalhado
-- 3.1: horário do lembrete em `SharedPreferences` (`rotina_prefs`); `agendar()` no start usa **KEEP** (não desloca), `salvarEReagendar()` usa **CANCEL_AND_REENQUEUE** (novo horário vale já); notificação usa `PendingIntent` imutável para `MainActivity`. Verificado no celular: 21:30 persistido, job com latência +6h59m (próximo 21:30) e toque na notificação abriu o app; horário restaurado para 20:00
-- 3.2: `dataSelecionada: MutableStateFlow<Long>` + `flatMapLatest` para metas/submetas/dia; escritas capturam a data no clique; resumo/rótulo em funções puras (`resumoDoDia` com arredondamento, `rotuloData`) cobertas por 5 testes JVM. Verificado no celular: ←/Seguinte/Hoje, resumo 1/7=14% e 2/7=29%, badge Folga; estado restaurado (0/7, folga off)
-- 3.3: data no topo é clicável e abre `DatePickerDialog` nativo iniciando em `dataSelecionada`; callback grava `LocalDate.of(ano, mes+1, dia).toEpochDay()` via `selecionarData()`. Verificado no celular: mês anterior → 15/10/2026, botão "Hoje" → 03/11/2026
-- 4.1: entidade `TreinoSemana` com PK natural (`diaSemana` 1–7) e `@Upsert`; migration `MIGRACAO_2_3` cria `treinos_semana` (sem FK, sem seed). Nome do arquivo real é `RotinaDb.kt` (a tarefa citava `RotinaDatabase.kt`). Verificado no celular: `user_version=3`, tabela com schema esperado, `room_master_table` atualizado e 7 metas preservadas
-- 4.2: card "Treino do Dia" segue o dia da semana de `dataSelecionada`; editor dos 7 dias com título/descrição e "Salvar" individual. Erro de compilação pego e corrigido: `items(1..7)` caía na sobrecarga `count: Int` → `items((1..7).toList())`. Verificado no celular: salvar Terça atualizou o card na hora; DB com `(2, 'Peito e Triceps', 'Supino, crucifixo e Triceps corda')`; navegar para segunda mostrou "Nenhum treino..." e voltar para hoje restaurou o treino
-- 4.3: `RegistroTreinoDia` (PK natural `data`) e `ExercicioRegistro` (PK autoGenerate + índice em `data`); DAO com flows `registroTreinoDoDia`/`exerciciosDoDia`, `@Upsert` e `apagarExercicio(id)`; migration `MIGRACAO_3_4` no companion (padrão das anteriores) e `version=4`. Sem teste JVM novo (schema/DAO gerados pelo Room; validação por compilação + migration real, mesmo padrão da 4.1). Verificado no celular: `user_version=4`, `PRAGMA integrity_check=ok`, schemas exatos, índice `index_exercicios_registro_data`, 7 metas e treino da Terça preservados, `room_master_table` atualizado e app abriu sem crash
-- 4.4: diário em `TelaRegistroTreino` (data selecionada, checkboxes de concluído/cardio, observações, lista e diálogo de exercício); helpers puros `resumoExercicio`/`resumoCardio`/`resumoExerciciosAnotados` com TDD 8/8 (19 testes no total). Erro de compilação pego: `registro?.alteracoes` não existe (campo real `alteracoesRotina`) → corrigido. No celular: marcar concluído, observação, "Supino Reto" 4 séries/10 reps/30 kg e cardio 20 min Esteira; card exibiu badge, "Exercícios: 1 anotado" e "Cardio: 20 min (Esteira)"; apagar exercício de teste e cold start confirmados; DB `registro_treino_dia (20760, 1, ..., 1, 'Esteira', 20)` e `exercicios_registro (1, 20760, 'Supino Reto', 4, '10', '30 kg', 1)`. Navegar para 02/11 não mostrou resumo e voltar para hoje restaurou
-- Ajuste de UI: `TelaMetas` agora tem um único `LazyColumn` raiz (padding 24, espaçamento 8); cabeçalho, navegação de data, resumo, treino, botões de lembrete e metas/submetas são itens da mesma lista. No celular: swipe para cima removeu o cabeçalho "Rotina" da tela junto com o conteúdo e revelou as metas; swipe para baixo restaurou o topo; 19 testes e `assembleDebug` verdes, sem crash
-- 5.0 (vigência): `Meta`/`Submeta` ganharam `dataInicio` (default 0 = desde sempre) e `dataFim` (NULL = sem fim); `MIGRACAO_4_5` adiciona as colunas e `version=5`. No celular: `user_version=5`, `integrity_check=ok`, schema/defaults exatos, 7 metas e 2 submetas originais, 14 checklist, 3 `submeta_dia`, treino/registro preservados. O plano citava `inserirMeta`/`inserirSubmeta` (inexistentes); usei `metaSalvar`/`submetaSalvarCfg` (@Upsert) sob o `Mutex` existente. `moverMeta` passou a considerar só itens vigentes; ao encerrar/apagar não compacto ordens, para não reescrever o histórico (lacunas são inofensivas). Diálogo diferencia "Apagar" (criado na data) de "Encerrar" (histórico preservado). Teste no celular: calendário → 05/11, "Meta Teste 05" + "Sub Teste 05" visíveis em 05/11 e ausentes em 04/11/03/11 (resumo 0/8 vs 0/7); soft delete de meta criada em 01/11 e encerrada em 03/11 sumiu de hoje e permaneceu em 01/11; hard delete limpou o teste temporário. `testDebugUnitTest` 23/23 (4 novos de vigência), `assembleDebug`, cold start sem erros. Dados de teste deixados de propósito: "Meta Teste 05" e "Sub Teste 05" em 05/11
-- 5.1/5.2 (diário por áudio): `DiarioDia` (PK `data`), DAO `diarioDoDia`/`salvarDiario` (`@Upsert`), Room v6 + `MIGRACAO_5_6`; `SpeechRecognizer` nativo pt-BR com parciais e estados OCIOSO/OUVINDO/PROCESSANDO; `RECORD_AUDIO` em runtime + `<queries>` para `RecognitionService`; nenhum áudio gravado em arquivo. Card com gravar/parar/editar/salvar; auto-save do resultado final; bloqueio de navegação com edição suja; `ON_STOP` cancela e salva rascunho. TDD 8/8 novos (31/31 total), `assembleDebug`. No celular: migração real `user_version=6`/`integrity_check=ok` e dados preservados; permissão concedida; transcrição real "meu dia foi produtivo" salva automaticamente; edição "ok" salva e o aviso de não salvo bloqueou Anterior; calendário 04/11 vazio e volta a 03/11 restaurou; cold start e logcat sem erros. Desvios: `salvarTextoDiario(texto, data opcional)` + `trim()`; `<queries>`; estado PROCESSANDO. Dados de teste: diário de 03/11 (epoch 20760) "meu dia foi produtivo"
-- Revisão final 5.1/5.2: sem itens críticos/importantes remanescentes; corrigida a corrida entre Parar/processando e resultado final e o espelho de data antiga; auto-save de rascunho no `ON_STOP` mantido por decisão de produto
-- 6.1: `MensagemIa` (`mensagens_ia`, PK autoGenerate, índices `data`/`criadoEm`), quatro métodos no DAO, Room `version=7` + `MIGRACAO_6_7` e `IaConfig` (SharedPreferences `rotina_ia_prefs`, `MODE_PRIVATE`). Sem nova lógica pura, então sem teste JVM novo; a suíte existente foi a regressão (31/31). No celular: cold start `COLD` sem crash/FATAL, `user_version=7`, `integrity_check=ok`, schema/índices exatos, `mensagens_ia` vazia, `room_master_table` atualizado e hash das linhas antigas idêntico ao snapshot v6. O banco real tem 8 metas (6 seed + 1 manual + `Meta Teste 05`, preservado de propósito), 1 diário de 03/11 e 1 registro de treino; nenhum foi alterado. Ruling: `MIGRACAO_6_7` ficou `private` como as migrações anteriores (mesma semântica); a chave não é exibida nem logada em nenhum ponto e não foi gravada nesta tarefa.
-- 6.2: o system do prompt sempre inclui `PerfilIa.PERFIL_PADRAO`, o perfil salvo quando diferente do padrão e o resumo determinístico do dia; o histórico é ordenado por `criadoEm`/`id` e truncado nas 30 mensagens mais recentes (em ordem ASC); origens desconhecidas são ignoradas. Sem UI própria: 39/39 testes JVM e incluído no APK da 6.3.
-- 6.3: `NotaDia`/`notas_dia` (PK autoGenerate, índices `data` e `criadoEm`), Room v8 + `MIGRACAO_7_8`; ViewModel expõe `notasDoDia` e `adicionarNota`/`apagarNota`; `ContextoIa` ganhou `notasRapidas` (default vazio para compatibilidade) e o resumo inclui "Momentos registrados ao longo do dia:", além de contar notas como registro do dia. O card "Momentos & Diário do Dia" mantém o diário e adiciona lista com hora, lixeira e "+ Anotar Momento". O diálogo próprio usa uma instância separada de `GravadorVoz` com rótulo "momento" (parâmetro opcional novo), permissão de microfone, ditado/parcial, cancelamento no `ON_STOP` e `destroy` ao fechar. No celular: migração real `user_version=8`/`integrity_check=ok`; hash das tabelas antigas idêntico ao snapshot v7 (a única diferença foi uma nova linha normal em `dias` para hoje, sem alterar a linha antiga); 2 notas em 06/11 ("1a refeicao concluida, 500ml de agua" às 07:49 e "Estudei Kotlin por 1 hora" às 07:53), 05/11 sem notas e volta restaurou; cold start manteve as 2 notas; lixeira apagou uma terceira nota temporária; voz iniciou "Ouvindo", transcreveu parcial em tempo real e foi cancelada sem salvar; logcat sem FATAL. Testes 40/40. Dados de teste deixados de propósito: os 2 momentos de 06/11.
-- 6.4: `GeminiClient` HTTPS nativo (`HttpURLConnection`, sem lib externa) com a chave no header **`x-goog-api-key`**, não em `?key=` — desvio deliberado do exemplo da spec para não colocar a chave em URL/logs; payload `systemInstruction` + `contents` e erros da API viram `Result.failure`. O ViewModel lê o histórico **antes** de salvar a mensagem atual, para ela entrar no prompt apenas como pergunta (o exemplo da spec salvava antes e duplicava a mesma mensagem); usa `try/finally` para sempre liberar `carregandoIa`. A tela tem topbar com Voltar/Relatório/chave, balões (usuário à direita em `primaryContainer`, Jarvis à esquerda em `surfaceVariant`), rolagem automática, "Jarvis está pensando...", alerta de erro, envio por texto/voz e diálogo de chave com `PasswordVisualTransformation` + aviso de que contexto/histórico são enviados ao Google Gemini. No celular: botão principal abriu o chat; sem chave, "Enviar" e "Relatório do Dia" mostraram o erro correto; diálogo abriu com campo `password=true` e privacidade; dois balões sintéticos (inseridos direto no Room só para conferir o layout) apareceram na ordem/alinhamento certos e foram apagados; microfone iniciou, transcreveu parcial e parou sem enviar; Voltar e back do sistema retornaram à tela principal; cold start sem FATAL. Na validação inicial não havia chave configurada; depois o usuário configurou a chave no aparelho. Testes 41/41; dados existentes preservados (`metas_dia=8`, `submetas=3`, diário=1, treino=1, `notas_dia=4`, `checklist=20`) e `mensagens_ia=0` após a limpeza; `user_version=8` e `integrity_check=ok`. A chamada real com a chave configurada foi exercitada depois (ver bullet seguinte).
-- 6.4 (validação real 09/11/2026): com a chave já configurada no aparelho, o chat enviou a mensagem "TesteReal"; a chamada chegou à API e retornou **404 NOT_FOUND** — `models/gemini-2.5-flash is no longer available to new users`; a resposta recomenda `models/gemini-3.8-flash` e a Interactions API. A mensagem do usuário ficou salva no histórico, **nenhum balão do Jarvis foi criado**, o erro completo apareceu no alerta do app e não houve FATAL no logcat. A chave não foi exibida nem logada; nenhum código foi alterado nesta validação. **Correção autorizada e aplicada no commit `44cf3fa`:** `MODELO` passou a `gemini-3.1-flash-lite`; nova validação no bullet seguinte.
-- 6.4 (validação real concluída 09/11/2026): após a troca para `gemini-3.1-flash-lite` (`44cf3fa`), 41/41 testes JVM e `assembleDebug` passaram; `adb install -r` preservou a chave e os dados. No celular, a mensagem "TesteModelo31" foi enviada às 19:58 e o balão de resposta do Jarvis apareceu no chat em ~2s: "Status do dia: **Zero absoluto.** ... Estou monitorando. Faça valer o dia." A rolagem confirmou o balão do usuário e o do Jarvis juntos; não houve alerta de erro nem FATAL no logcat; a chave não foi exibida nem logada. Observação: o Markdown veio literal no balão (`**...**`), pois a tela exibe texto puro; não bloqueia a resposta real.
-
-## ✅ Fase 2 — Plano: docs/PLANO.md criado (aguardando sua revisão)
-- Marcos 1–6 com critério de pronto; **Marco 1 detalhado** (5 tarefas): metas diárias checklist + Room + lembrete 20:00
-- Decisões para confirmar na revisão: (a) lembrete às 20:00 ok? (b) semana de segunda a domingo ok?
-- Próximo passo: aprovação → Fase 3 executa o Marco 1 (Tarefa 1: esqueleto do projeto)
+## 📌 Próxima Tarefa para o Novo Terminal:
+- **Marco 7 — Design & UI/UX Polish:**
+  1. Definir paleta de cores moderna Material 3 (Dark/Light).
+  2. Adicionar ícones visuais para metas, treino, água e diário.
+  3. Melhorar espaçamentos, cantos arredondados e elevação dos cards.
+  4. Renderizar formatação Markdown nos balões do Jarvis.
