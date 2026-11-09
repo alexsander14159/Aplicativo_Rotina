@@ -1,5 +1,6 @@
 package com.rotina.ui
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,6 +10,7 @@ import com.rotina.data.Dia
 import com.rotina.data.EstadoMeta
 import com.rotina.data.EstadoSubmeta
 import com.rotina.data.ExercicioRegistro
+import com.rotina.data.MensagemIa
 import com.rotina.data.Meta
 import com.rotina.data.NotaDia
 import com.rotina.data.RegistroTreinoDia
@@ -16,6 +18,11 @@ import com.rotina.data.RotinaDao
 import com.rotina.data.Submeta
 import com.rotina.data.SubmetaDia
 import com.rotina.data.TreinoSemana
+import com.rotina.ia.GeminiClient
+import com.rotina.ia.IaConfig
+import com.rotina.ia.PerfilIa
+import com.rotina.ia.coletar
+import com.rotina.ia.montar
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -79,6 +86,13 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
     val notasDoDia: StateFlow<List<NotaDia>> = dataSelecionada
         .flatMapLatest { dao.notasDoDia(it) }
         .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    /** Histórico completo do chat com o Jarvis, em ordem de criação. */
+    val mensagensChat: StateFlow<List<MensagemIa>> = dao.todasMensagensIa()
+        .stateIn(scope = viewModelScope, started = SharingStarted.WhileSubscribed(5000), initialValue = emptyList())
+
+    val carregandoIa = MutableStateFlow(false)
+    val erroIa = MutableStateFlow<String?>(null)
 
     // Configuração (CRUD): metas e submetas vigentes na data selecionada.
     val metasCfg: StateFlow<List<Meta>> = dataSelecionada
@@ -168,6 +182,93 @@ class RotinaViewModel(private val dao: RotinaDao) : ViewModel() {
         viewModelScope.launch {
             dao.apagarNota(id)
         }
+    }
+
+    // ---- Jarvis: chat e relatório do dia ----
+
+    /**
+     * Envia uma mensagem do usuário ao Gemini.
+     * A leitura do histórico acontece antes de salvar a mensagem atual; assim ela entra
+     * no prompt apenas como pergunta, sem duplicar o mesmo texto no histórico.
+     */
+    fun enviarMensagemJarvis(context: Context, texto: String) {
+        val mensagem = texto.trim()
+        if (mensagem.isEmpty() || carregandoIa.value) return
+        val chave = IaConfig.obterChave(context)
+        if (chave.isBlank()) {
+            erroIa.value = "Chave da API do Gemini não informada. " +
+                "Toque no ícone de chave para salvar sua chave."
+            return
+        }
+
+        carregandoIa.value = true
+        erroIa.value = null
+        viewModelScope.launch {
+            try {
+                val dataHoje = dataSelecionada.value
+                val ultimas = dao.ultimasMensagensIa(20).reversed()
+                dao.salvarMensagemIa(
+                    MensagemIa(data = dataHoje, origem = "USER", conteudo = mensagem),
+                )
+                val perfil = PerfilIa.obter(context)
+                val contexto = coletar(dao, dataHoje, perfil)
+                val prompt = montar(contexto, ultimas, mensagem)
+                GeminiClient.enviar(chave, prompt).fold(
+                    onSuccess = { resposta ->
+                        dao.salvarMensagemIa(
+                            MensagemIa(data = dataHoje, origem = "ASSISTANT", conteudo = resposta),
+                        )
+                    },
+                    onFailure = { err ->
+                        erroIa.value = err.localizedMessage ?: "Erro ao comunicar com a IA."
+                    },
+                )
+            } catch (e: Exception) {
+                erroIa.value = e.localizedMessage ?: "Erro ao comunicar com a IA."
+            } finally {
+                carregandoIa.value = false
+            }
+        }
+    }
+
+    /** Pede o briefing do dia sem salvar uma mensagem de usuário; a resposta vira mensagem do Jarvis. */
+    fun pedirRelatorioDoDia(context: Context) {
+        if (carregandoIa.value) return
+        val chave = IaConfig.obterChave(context)
+        if (chave.isBlank()) {
+            erroIa.value = "Chave da API do Gemini não informada. Configure no ícone de chave."
+            return
+        }
+
+        carregandoIa.value = true
+        erroIa.value = null
+        viewModelScope.launch {
+            try {
+                val dataHoje = dataSelecionada.value
+                val perfil = PerfilIa.obter(context)
+                val contexto = coletar(dao, dataHoje, perfil)
+                val ultimas = dao.ultimasMensagensIa(10).reversed()
+                val prompt = montar(contexto, ultimas, pergunta = null)
+                GeminiClient.enviar(chave, prompt).fold(
+                    onSuccess = { resposta ->
+                        dao.salvarMensagemIa(
+                            MensagemIa(data = dataHoje, origem = "ASSISTANT", conteudo = resposta),
+                        )
+                    },
+                    onFailure = { err ->
+                        erroIa.value = err.localizedMessage ?: "Erro ao gerar relatório."
+                    },
+                )
+            } catch (e: Exception) {
+                erroIa.value = e.localizedMessage ?: "Erro ao gerar relatório."
+            } finally {
+                carregandoIa.value = false
+            }
+        }
+    }
+
+    fun limparErroIa() {
+        erroIa.value = null
     }
 
     /** Ligar/desligar a folga do dia (feriado, cochilo, dia esquisito). */

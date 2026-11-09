@@ -22,6 +22,7 @@ import com.rotina.ui.TelaMetas
 import com.rotina.ui.TelaMetasEdit
 import com.rotina.ui.TelaRegistroTreino
 import com.rotina.ui.TelaTreinosEdit
+import com.rotina.ui.TelaChatJarvis
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -41,9 +42,15 @@ class MainActivity : ComponentActivity() {
             val telaEdicao = rememberSaveable { mutableStateOf(false) }
             val modoTreinosEdit = rememberSaveable { mutableStateOf(false) }
             val modoRegistroTreino = rememberSaveable { mutableStateOf(false) }
+            val modoChatJarvis = rememberSaveable { mutableStateOf(false) }
             val horaLembrete = rememberSaveable { mutableStateOf(horaInicial) }
             val minutoLembrete = rememberSaveable { mutableStateOf(minutoInicial) }
-            if (telaEdicao.value) {
+            if (modoChatJarvis.value) {
+                TelaChatJarvis(
+                    vm = vm,
+                    onVoltar = { modoChatJarvis.value = false },
+                )
+            } else if (telaEdicao.value) {
                 TelaMetasEdit(
                     vm = vm,
                     onVoltar = { telaEdicao.value = false },
@@ -96,6 +103,7 @@ class MainActivity : ComponentActivity() {
                     onEditarMetas = { telaEdicao.value = true },
                     onEditarTreinos = { modoTreinosEdit.value = true },
                     onAnotarTreino = { modoRegistroTreino.value = true },
+                    onAbrirChat = { modoChatJarvis.value = true },
                 )
             }
         }

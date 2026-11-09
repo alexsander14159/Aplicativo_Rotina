@@ -61,6 +61,7 @@ fun TelaMetas(
     onEditarMetas: (() -> Unit)? = null,
     onEditarTreinos: (() -> Unit)? = null,
     onAnotarTreino: (() -> Unit)? = null,
+    onAbrirChat: (() -> Unit)? = null,
 ) {
     val metas by vm.metas.collectAsState()
     val submetas by vm.submetas.collectAsState()
@@ -266,6 +267,18 @@ fun TelaMetas(
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                if (onAbrirChat != null) {
+                    item {
+                        Button(
+                            onClick = onAbrirChat,
+                            enabled = !diarioPendente,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("💬 Conversar com o Jarvis")
                         }
                     }
                 }
