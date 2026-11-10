@@ -5,24 +5,43 @@ import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,9 +57,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -163,125 +186,253 @@ fun TelaMetas(
     val diarioOcupado = estadoDiario != EstadoGravacao.OCIOSO
     val diarioPendente = diarioOcupado || textoEditado
 
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Rotina",
                             style = MaterialTheme.typography.headlineLarge,
-                            modifier = Modifier.weight(1f),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
                         )
-                        FilterChip(
-                            selected = folga,
-                            onClick = { vm.alternarFolga() },
-                            label = { Text(if (ehHoje) "Hoje é folga" else "Folga") },
+                        Text(
+                            text = "Seu dia em foco e disciplina",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (onEditarMetas != null) {
-                            TextButton(onClick = onEditarMetas, enabled = !diarioPendente) {
-                                Text("Metas")
-                            }
+                    }
+                    FilterChip(
+                        selected = folga,
+                        onClick = { vm.alternarFolga() },
+                        label = { Text(if (ehHoje) "Hoje é folga" else "Folga") },
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    if (onEditarMetas != null) {
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = onEditarMetas,
+                            enabled = !diarioPendente,
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text("Metas", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
+            }
 
-                // Navegação por data
-                item {
+            // Navegação por data
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    tonalElevation = 2.dp
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        TextButton(
+                        IconButton(
                             onClick = vm::irParaDiaAnterior,
-                            enabled = !diarioPendente,
-                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            enabled = !diarioPendente
                         ) {
-                            Text("← Anterior")
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Dia Anterior",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        Text(
-                            text = rotuloData(dataSelecionada, hoje) + "  📅",
-                            style = MaterialTheme.typography.titleMedium,
-                            textAlign = TextAlign.Center,
+                        Row(
                             modifier = Modifier
                                 .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable(
                                     enabled = onAbrirCalendario != null && !diarioPendente,
                                 ) {
                                     onAbrirCalendario?.invoke()
                                 }
                                 .padding(vertical = 8.dp),
-                        )
-                        TextButton(
-                            onClick = vm::irParaDiaSeguinte,
-                            enabled = !diarioPendente,
-                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Seguinte →")
+                            Icon(
+                                Icons.Filled.CalendarMonth,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                text = rotuloData(dataSelecionada, hoje),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(
+                            onClick = vm::irParaDiaSeguinte,
+                            enabled = !diarioPendente
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Dia Seguinte",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
-                if (!ehHoje) {
-                    item {
-                        TextButton(onClick = vm::irParaHoje, enabled = !diarioPendente) {
-                            Text("Hoje")
-                        }
-                    }
-                }
-
-                // Resumo do dia
+            }
+            if (!ehHoje) {
                 item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        TextButton(
+                            onClick = vm::irParaHoje,
+                            enabled = !diarioPendente,
+                            shape = RoundedCornerShape(20.dp),
+                        ) {
+                            Text("Voltar para Hoje", fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+
+            // Resumo do dia com barra de progresso visual
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Resumo do dia",
+                                text = "Resumo do Dia",
                                 style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = resumoDoDia(concluidas, metas.size),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                                if (folga) {
-                                    Spacer(Modifier.width(8.dp))
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.secondaryContainer,
-                                        shape = MaterialTheme.shapes.small,
-                                    ) {
-                                        Text(
-                                            text = "Folga",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                                        )
-                                    }
+                            if (folga) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = RoundedCornerShape(6.dp),
+                                ) {
+                                    Text(
+                                        text = "Folga",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    )
                                 }
                             }
                         }
-                    }
-                }
-
-                if (onAbrirChat != null) {
-                    item {
-                        Button(
-                            onClick = onAbrirChat,
-                            enabled = !diarioPendente,
+                        val progresso = if (metas.isNotEmpty()) concluidas.toFloat() / metas.size.toFloat() else 0f
+                        LinearProgressIndicator(
+                            progress = { progresso },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp)),
+                            color = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            strokeCap = StrokeCap.Round
+                        )
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("💬 Conversar com o Jarvis")
+                            Text(
+                                text = "${(progresso * 100).toInt()}% concluído",
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "$concluidas de ${metas.size} metas",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                     }
                 }
+            }
+
+            // Acesso ao Jarvis
+            if (onAbrirChat != null) {
+                item {
+                    Surface(
+                        onClick = onAbrirChat,
+                        enabled = !diarioPendente,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 3.dp
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.tertiaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Filled.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Jarvis (Mentor Inteligente)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Toque para conversar ou pedir o relatório do dia",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Text("💬", style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
+            }
 
                 // Diário do dia (texto transcrito/editado)
                 item {
@@ -312,130 +463,264 @@ fun TelaMetas(
                     )
                 }
 
-                // Treino do dia (segue o dia da semana da data selecionada)
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+            // Treino do dia (segue o dia da semana da data selecionada)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Filled.FitnessCenter,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                             Text(
                                 text = "Treino do Dia",
-                                style = MaterialTheme.typography.titleSmall,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
+                        }
+                        Text(
+                            text = treino?.titulo?.takeIf { it.isNotBlank() }
+                                ?: "Nenhum treino definido para hoje",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        val descricao = treino?.descricao.orEmpty()
+                        if (descricao.isNotBlank()) {
                             Text(
-                                text = treino?.titulo?.takeIf { it.isNotBlank() }
-                                    ?: "Nenhum treino definido para hoje",
-                                style = MaterialTheme.typography.bodyLarge,
+                                text = descricao,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            val descricao = treino?.descricao.orEmpty()
-                            if (descricao.isNotBlank()) {
-                                Text(
-                                    text = descricao,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
-                            if (registroTreino?.concluido == true) {
+                        }
+                        if (registroTreino?.concluido == true) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(8.dp),
+                            ) {
                                 Text(
                                     text = "✅ Treino Concluído",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 )
                             }
-                            resumoExerciciosAnotados(exerciciosRegistro.size)?.let { resumo ->
-                                Text(text = resumo, style = MaterialTheme.typography.bodySmall)
-                            }
-                            resumoCardio(
-                                fezCardio = registroTreino?.fezCardio == true,
-                                tipo = registroTreino?.tipoCardio.orEmpty(),
-                                minutos = registroTreino?.cardioMinutos ?: 0,
-                            )?.let { resumo ->
-                                Text(text = resumo, style = MaterialTheme.typography.bodySmall)
-                            }
+                        }
+                        resumoExerciciosAnotados(exerciciosRegistro.size)?.let { resumo ->
+                            Text(text = "• $resumo", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        resumoCardio(
+                            fezCardio = registroTreino?.fezCardio == true,
+                            tipo = registroTreino?.tipoCardio.orEmpty(),
+                            minutos = registroTreino?.cardioMinutos ?: 0,
+                        )?.let { resumo ->
+                            Text(text = "• $resumo", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             if (onAnotarTreino != null) {
-                                Button(onClick = onAnotarTreino, enabled = !diarioPendente) {
-                                    Text("Anotar Treino / Cargas")
+                                Button(
+                                    onClick = onAnotarTreino,
+                                    enabled = !diarioPendente,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Anotar Cargas")
                                 }
                             }
                             if (onEditarTreinos != null) {
-                                TextButton(onClick = onEditarTreinos, enabled = !diarioPendente) {
-                                    Text("Editar Treinos da Semana")
+                                TextButton(
+                                    onClick = onEditarTreinos,
+                                    enabled = !diarioPendente,
+                                    shape = RoundedCornerShape(12.dp)
+                                ) {
+                                    Text("Editar Semana")
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                if (onEditarLembrete != null) {
-                    item {
-                        TextButton(onClick = onEditarLembrete) {
-                            Text("Lembrete: ${LocalTime.of(lembreteHora, lembreteMinuto)}")
-                        }
-                    }
-                }
-                if (onTesteLembrete != null) {
-                    item {
-                        Button(onClick = onTesteLembrete) {
-                            Text("Testar lembrete (debug)")
-                        }
-                    }
-                }
-
-                items(metas, key = { it.id }) { meta ->
+            if (onEditarLembrete != null) {
+                item {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = meta.concluida == true,
-                                role = Role.Checkbox,
-                                onValueChange = { vm.alternar(meta.id) },
-                            )
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        // Checkbox passivo: o clique é do toggleable da linha (sem duplo disparo).
-                        Checkbox(checked = meta.concluida == true, onCheckedChange = null)
-                        Column {
-                            Text(text = meta.nome, style = MaterialTheme.typography.bodyLarge)
-                            if (meta.alvoTexto.isNotEmpty()) {
-                                Text(
-                                    text = "alvo: ${meta.alvoTexto}",
-                                    style = MaterialTheme.typography.bodySmall,
+                        TextButton(
+                            onClick = onEditarLembrete,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Filled.Schedule,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text("Lembrete diário: ${LocalTime.of(lembreteHora, lembreteMinuto)}")
+                        }
+                    }
+                }
+            }
+            if (onTesteLembrete != null) {
+                item {
+                    Button(
+                        onClick = onTesteLembrete,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Testar lembrete (debug)")
+                    }
+                }
+            }
+
+            items(metas, key = { it.id }) { meta ->
+                val concluida = meta.concluida == true
+                val infoIcone = remember(meta.nome) { obterIconeMeta(meta.nome) }
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = concluida,
+                            role = Role.Checkbox,
+                            onValueChange = { vm.alternar(meta.id) },
+                        ),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (concluida) {
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        }
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(CircleShape)
+                                    .background(infoIcone.containerColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = infoIcone.icon,
+                                    contentDescription = null,
+                                    tint = infoIcone.contentColor,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = meta.nome,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = if (concluida) FontWeight.Normal else FontWeight.SemiBold,
+                                    color = if (concluida) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                    textDecoration = if (concluida) TextDecoration.LineThrough else null
+                                )
+                                if (meta.alvoTexto.isNotEmpty()) {
+                                    Text(
+                                        text = "Alvo: ${meta.alvoTexto}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Checkbox(
+                                checked = concluida,
+                                onCheckedChange = null,
+                                colors = CheckboxDefaults.colors(
+                                    checkedColor = MaterialTheme.colorScheme.primary,
+                                    checkmarkColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+
+                        val submetas = submetasPorMeta[meta.id].orEmpty()
+                        if (submetas.isNotEmpty()) {
+                            Spacer(Modifier.height(8.dp))
+                            submetas.forEach { sub ->
+                                val subConcluida = sub.concluida == true
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .toggleable(
+                                            value = subConcluida,
+                                            role = Role.Checkbox,
+                                            onValueChange = { vm.alternarSubmeta(sub.id) },
+                                        )
+                                        .padding(start = 36.dp, end = 4.dp, top = 2.dp, bottom = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Checkbox(
+                                        checked = subConcluida,
+                                        onCheckedChange = null,
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.secondary,
+                                            checkmarkColor = MaterialTheme.colorScheme.onSecondary
+                                        )
+                                    )
+                                    Text(
+                                        text = sub.nome,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (subConcluida) {
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                        textDecoration = if (subConcluida) TextDecoration.LineThrough else null
+                                    )
+                                }
                             }
                         }
                     }
-                    submetasPorMeta[meta.id].orEmpty().forEach { sub ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .toggleable(
-                                    value = sub.concluida == true,
-                                    role = Role.Checkbox,
-                                    onValueChange = { vm.alternarSubmeta(sub.id) },
-                                )
-                                .padding(start = 28.dp)
-                                .padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Checkbox(checked = sub.concluida == true, onCheckedChange = null)
-                            Text(
-                                text = sub.nome,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                    }
                 }
             }
-            if (mostrarDialogoMomento) {
-                AnotarMomentoDialog(
-                    onDismiss = { mostrarDialogoMomento = false },
-                    onSalvar = { texto ->
-                        vm.adicionarNota(texto)
-                        mostrarDialogoMomento = false
-                    },
-                )
-            }
+        }
+        if (mostrarDialogoMomento) {
+            AnotarMomentoDialog(
+                onDismiss = { mostrarDialogoMomento = false },
+                onSalvar = { texto ->
+                    vm.adicionarNota(texto)
+                    mostrarDialogoMomento = false
+                },
+            )
         }
     }
 }
