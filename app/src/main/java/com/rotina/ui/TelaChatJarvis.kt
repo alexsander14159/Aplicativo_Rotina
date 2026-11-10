@@ -176,112 +176,113 @@ fun TelaChatJarvis(
         vm.pedirRelatorioDoDia(contexto)
     }
 
-    MaterialTheme {
-        Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .imePadding(),
+        ) {
+            BarraSuperiorJarvis(
+                carregando = carregando,
+                onVoltar = onVoltar,
+                onRelatorio = ::agendarRelatorio,
+                onChave = { mostrarDialogoChave = true },
+            )
+
+            LazyColumn(
+                state = listState,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .imePadding(),
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                BarraSuperiorJarvis(
-                    carregando = carregando,
-                    onVoltar = onVoltar,
-                    onRelatorio = ::agendarRelatorio,
-                    onChave = { mostrarDialogoChave = true },
-                )
+                if (mensagens.isEmpty() && !carregando) {
+                    item(key = "boas-vindas") {
+                        Text(
+                            text = "Converse com o Jarvis sobre seu dia, metas e treinos. " +
+                                "Ele usa o contexto do dia selecionado e suas últimas mensagens.",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
 
-                LazyColumn(
-                    state = listState,
+                items(mensagens, key = { it.id }) { mensagem ->
+                    BalaoMensagem(mensagem)
+                }
+
+                if (carregando) {
+                    item(key = "jarvis-pensando") {
+                        BalaoPensando()
+                    }
+                }
+            }
+
+            erro?.let { mensagemErro ->
+                AvisoErro(
+                    mensagem = mensagemErro,
+                    onDismiss = vm::limparErroIa,
+                )
+            }
+            avisoVoz?.let { avisoMicrofone ->
+                Text(
+                    text = avisoMicrofone,
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (mensagens.isEmpty() && !carregando) {
-                        item(key = "boas-vindas") {
-                            Text(
-                                text = "Converse com o Jarvis sobre seu dia, metas e treinos. " +
-                                    "Ele usa o contexto do dia selecionado e suas últimas mensagens.",
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(24.dp),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-
-                    items(mensagens, key = { it.id }) { mensagem ->
-                        BalaoMensagem(mensagem)
-                    }
-
-                    if (carregando) {
-                        item(key = "jarvis-pensando") {
-                            BalaoPensando()
-                        }
-                    }
-                }
-
-                erro?.let { mensagemErro ->
-                    AvisoErro(
-                        mensagem = mensagemErro,
-                        onDismiss = vm::limparErroIa,
-                    )
-                }
-                avisoVoz?.let { avisoMicrofone ->
-                    Text(
-                        text = avisoMicrofone,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                aviso?.let { mensagemAviso ->
-                    Text(
-                        text = mensagemAviso,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-
-                BarraEnvioJarvis(
-                    texto = texto,
-                    estadoVoz = estadoVoz,
-                    carregando = carregando,
-                    onTextoChange = {
-                        texto = it
-                        aviso = null
-                        avisoVoz = null
-                    },
-                    onIniciarGravacao = ::iniciarGravacao,
-                    onPararGravacao = { gravador.parar() },
-                    onEnviar = ::enviar,
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            aviso?.let { mensagemAviso ->
+                Text(
+                    text = mensagemAviso,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 
-            if (mostrarDialogoChave) {
-                DialogoChaveGemini(
-                    temChave = IaConfig.obterChave(contexto).isNotBlank(),
-                    onDismiss = { mostrarDialogoChave = false },
-                    onSalvar = { chave ->
-                        IaConfig.salvarChave(contexto, chave)
-                        mostrarDialogoChave = false
-                        aviso = "Chave salva neste aparelho."
-                    },
-                    onRemover = {
-                        IaConfig.salvarChave(contexto, "")
-                        mostrarDialogoChave = false
-                        aviso = "Chave removida deste aparelho."
-                    },
-                )
-            }
+            BarraEnvioJarvis(
+                texto = texto,
+                estadoVoz = estadoVoz,
+                carregando = carregando,
+                onTextoChange = {
+                    texto = it
+                    aviso = null
+                    avisoVoz = null
+                },
+                onIniciarGravacao = ::iniciarGravacao,
+                onPararGravacao = { gravador.parar() },
+                onEnviar = ::enviar,
+            )
+        }
+
+        if (mostrarDialogoChave) {
+            DialogoChaveGemini(
+                temChave = IaConfig.obterChave(contexto).isNotBlank(),
+                onDismiss = { mostrarDialogoChave = false },
+                onSalvar = { chave ->
+                    IaConfig.salvarChave(contexto, chave)
+                    mostrarDialogoChave = false
+                    aviso = "Chave salva neste aparelho."
+                },
+                onRemover = {
+                    IaConfig.salvarChave(contexto, "")
+                    mostrarDialogoChave = false
+                    aviso = "Chave removida deste aparelho."
+                },
+            )
         }
     }
 }
@@ -300,29 +301,58 @@ private fun BarraSuperiorJarvis(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onVoltar) {
-                    Text("← Voltar")
+                IconButton(onClick = onVoltar) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar",
+                    )
                 }
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.tertiaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AutoAwesome,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
                 Text(
                     text = "Jarvis (Mentor)",
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                TextButton(onClick = onChave) {
-                    Text("🔑")
+                IconButton(onClick = onChave) {
+                    Icon(
+                        imageVector = Icons.Filled.Key,
+                        contentDescription = "Configurar chave do Gemini",
+                    )
                 }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(
+                Button(
                     onClick = onRelatorio,
                     enabled = !carregando,
+                    shape = RoundedCornerShape(12.dp),
                 ) {
-                    Text("📊 Relatório do Dia")
+                    Icon(
+                        imageVector = Icons.Filled.Assessment,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Relatório do Dia")
                 }
             }
         }
@@ -337,6 +367,26 @@ private fun BalaoMensagem(mensagem: MensagemIa) {
     } else {
         MaterialTheme.colorScheme.surfaceVariant
     }
+    val corTexto = if (doUsuario) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val shape = if (doUsuario) {
+        RoundedCornerShape(
+            topStart = 4.dp,
+            topEnd = 16.dp,
+            bottomStart = 16.dp,
+            bottomEnd = 16.dp,
+        )
+    } else {
+        RoundedCornerShape(
+            topStart = 16.dp,
+            topEnd = 4.dp,
+            bottomStart = 16.dp,
+            bottomEnd = 16.dp,
+        )
+    }
     val alinhamento = if (doUsuario) Arrangement.End else Arrangement.Start
 
     Row(
@@ -345,16 +395,25 @@ private fun BalaoMensagem(mensagem: MensagemIa) {
     ) {
         Surface(
             color = cor,
-            shape = RoundedCornerShape(16.dp),
+            shape = shape,
             modifier = Modifier.widthIn(max = 320.dp),
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                Text(
-                    text = mensagem.conteudo,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                if (doUsuario) {
+                    Text(
+                        text = mensagem.conteudo,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = corTexto,
+                    )
+                } else {
+                    MarkdownText(
+                        text = mensagem.conteudo,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = corTexto,
+                    )
+                }
                 Text(
                     text = formatarHora(mensagem.criadoEm),
                     modifier = Modifier.align(Alignment.End),
@@ -374,7 +433,12 @@ private fun BalaoPensando() {
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(
+                topStart = 16.dp,
+                topEnd = 4.dp,
+                bottomStart = 16.dp,
+                bottomEnd = 16.dp,
+            ),
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -388,6 +452,7 @@ private fun BalaoPensando() {
                 Text(
                     text = "Jarvis está pensando...",
                     style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
