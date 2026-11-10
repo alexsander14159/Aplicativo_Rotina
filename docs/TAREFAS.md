@@ -11,11 +11,11 @@ Atualizado: 2026-11-09
 
 ---
 
-## Marco 7 — Design & UI/UX Polish (Próximo)
+## Marco 7 — Design & UI/UX Polish (EM ANDAMENTO 🎨)
 
 ### Objetivo:
-Deixar o aplicativo moderno, bonito e com acabamento de alto nível:
-1. **Paleta de cores e Tema Material 3:** Cores escuras/claras refinadas, superfícies elevadas e contraste agradável.
-2. **Tipografia e Ícones:** Ícones visuais para metas, treino, cardio, água e diário.
-3. **Cards e Espaçamentos:** Acabamento com bordas suaves, chips elegantes e microinterações de toque.
-4. **Formatação de Markdown nos balões do Jarvis:** Renderizar negritos e quebras de linha com estilo.
+Deixar o aplicativo moderno, com acabamento de alto nível, tipografia consistente, contraste perfeito e navegação visual refinada:
+- **Tarefa 7.1: ✅ Concluída!** Fundação Visual Material 3 — Sistema de Cores (Dark Slate refinado / Light), Tipografia equilibrada, Shapes com cantos arredondados (16dp cards, 8dp chips, 24dp pills) e integração do `RotinaTheme` na `MainActivity`.
+- **Tarefa 7.2 (PRÓXIMA):** Sistema de Ícones Semânticos para Metas (Estudo, Água, Treino, Sono, etc.) com seletor e exibição no checklist diário.
+- **Tarefa 7.3 (PENDENTE):** Redesign e Acabamento de Cards, Progresso e Espaçamento (`TelaMetas`, Treinos e Momentos).
+- **Tarefa 7.4 (PENDENTE):** Renderizador Markdown Nativo e Polimento dos Balões do Chat do Jarvis (`TelaChatJarvis`).
