@@ -2,8 +2,8 @@
 
 Atualizado: 2026-11-09
 
-## Estado atual: Marcos 1 a 6 CONCLUÍDOS e VALIDADOS no celular físico TECNO KL4 ✅
-**Próximo passo:** Marco 7 — Design & UI/UX Polish (Embelezamento visual, Material 3, tema escuro, ícones e acabamento).
+## Estado atual: Marcos 1 a 6 concluídos e validados no celular físico TECNO KL4; Marco 7 (Design & UI/UX) 100% concluído ✅
+**Próximo passo:** aguardar o maestro definir a próxima tarefa ou o fechamento do Marco 7; não iniciar sem spec aprovada.
 
 ---
 
@@ -11,7 +11,7 @@ Atualizado: 2026-11-09
 - **Aparelho físico:** TECNO SPARK GO 1 (KL4), Android 14 (API 34)
 - **SDK:** `minSdk = 26`, `targetSdk = 37` (Android 15), `compileSdk = 37`
 - **Stack:** Kotlin nativo + Jetpack Compose (Material 3) + Room v8 + WorkManager 2.12 + Gemini API (gemini-3.1-flash-lite)
-- **Testes automatizados:** 41/41 testes JVM passando.
+- **Testes automatizados:** 45/45 testes JVM passando.
 
 ---
 
@@ -75,11 +75,16 @@ Atualizado: 2026-11-09
 - Botão "Relatório do Dia": briefing diário personalizado com tom de mentor.
 - Testado e validado fisicamente no celular TECNO KL4 com resposta real gerada pelo Jarvis!
 
+### Marco 7: Design & UI/UX Polish
+- **7.1** Fundação Material 3 (Dark Slate/Light), tipografia, shapes e `RotinaTheme` na `MainActivity` (`9d846fd`).
+- **7.2/7.3** Ícones semânticos por meta e redesign da `TelaMetas` com cards, progresso visual e navegação (`a350819`).
+- **7.4** Chat do Jarvis: barra com avatar roxo e ícones Material 3, botão "Relatório do Dia" com ícone, Markdown nativo nos balões do Jarvis, formas assimétricas, cores semânticas e `Surface` principal com `background` herdando o `RotinaTheme` (removido o `MaterialTheme` interno legado) (`5aeaf91`). Validação: 45/45 testes JVM, `assembleDebug`, `adb install -r` e revisão visual no TECNO KL4.
+
 ---
 
 ## 📌 Próxima Tarefa para o Novo Terminal:
-- **Marco 7 — Design & UI/UX Polish:**
-  1. Definir paleta de cores moderna Material 3 (Dark/Light).
-  2. Adicionar ícones visuais para metas, treino, água e diário.
-  3. Melhorar espaçamentos, cantos arredondados e elevação dos cards.
-  4. Renderizar formatação Markdown nos balões do Jarvis.
+- **Marco 7 — Design & UI/UX Polish: ✅ 100% concluído.**
+  - 7.1 Tema/Design System (`9d846fd`).
+  - 7.2/7.3 Ícones semânticos e redesign da `TelaMetas` (`a350819`).
+  - 7.4 Chat do Jarvis com Markdown e barra redesenhada (`5aeaf91`).
+- Aguardar a próxima spec do maestro; não iniciar sem aprovação.
