@@ -1,9 +1,9 @@
 # STATUS — Rotina App
 
-Atualizado: 2026-11-09
+Atualizado: 2026-11-12
 
-## Estado atual: Marcos 1 a 6 concluídos e validados no celular físico TECNO KL4; Marco 7 (Design & UI/UX) 100% concluído ✅
-**Próximo passo:** aguardar o maestro definir a próxima tarefa ou o fechamento do Marco 7; não iniciar sem spec aprovada.
+## Estado atual: Marcos 1 a 7 concluídos e validados no celular físico TECNO KL4; projeto publicado no GitHub.
+**Próximo passo:** aguardar o maestro definir a próxima tarefa; não iniciar sem spec aprovada.
 
 ---
 
@@ -12,6 +12,14 @@ Atualizado: 2026-11-09
 - **SDK:** `minSdk = 26`, `targetSdk = 37` (Android 15), `compileSdk = 37`
 - **Stack:** Kotlin nativo + Jetpack Compose (Material 3) + Room v8 + WorkManager 2.12 + Gemini API (gemini-3.1-flash-lite)
 - **Testes automatizados:** 45/45 testes JVM passando.
+
+---
+
+## 🌐 Publicação
+- **Repositório:** https://github.com/alexsander14159/Aplicativo_Rotina
+- **Branch principal:** `master`
+- **Versão:** `0.1.0` (`versionCode 1`)
+- **Primeira release:** `v0.1.0` — Marcos 1 a 7 concluídos.
 
 ---
 
