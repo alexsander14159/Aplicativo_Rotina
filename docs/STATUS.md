@@ -19,7 +19,7 @@ Atualizado: 2026-11-12
 - **Repositório:** https://github.com/alexsander14159/Aplicativo_Rotina
 - **Branch principal:** `master`
 - **Versão:** `0.1.0` (`versionCode 1`)
-- **Primeira release:** `v0.1.0` — Marcos 1 a 7 concluídos.
+- **Primeira release:** [`v0.1.0`](https://github.com/alexsander14159/Aplicativo_Rotina/releases/tag/v0.1.0) — Marcos 1 a 7 concluídos.
 
 ---
 
